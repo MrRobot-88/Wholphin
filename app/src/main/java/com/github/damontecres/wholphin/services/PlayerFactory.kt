@@ -38,6 +38,7 @@ import com.github.damontecres.wholphin.preferences.Av1DecoderMode
 import com.github.damontecres.wholphin.preferences.DoviP7Mode
 import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
 import com.github.damontecres.wholphin.preferences.PlayerBackend
+import com.github.damontecres.wholphin.preferences.VideoDecoderMode
 import com.github.damontecres.wholphin.preferences.get
 import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.util.BitstreamFilteringCodecAdapterFactory
@@ -101,6 +102,8 @@ class PlayerFactory
                         val extensions = prefs.overrides.mediaExtensionsEnabled
                         val useLibAss =
                             prefs.overrides.assPlaybackMode == AssPlaybackMode.ASS_LIBASS
+                        val h264DecoderMode = prefs.overrides.h264DecoderMode
+                        val h265DecoderMode = prefs.overrides.h265DecoderMode
                         val av1DecoderMode = prefs.overrides.av1DecoderMode
                         val doviCompatMode = resolveDoviCompatMode(prefs.overrides.doviP7Mode)
                         val audioPassthroughPolicy =
@@ -127,6 +130,8 @@ class PlayerFactory
                         var renderersFactory: RenderersFactory =
                             WholphinRenderersFactory(
                                 context = context,
+                                h264DecoderMode = h264DecoderMode,
+                                h265DecoderMode = h265DecoderMode,
                                 av1DecoderMode = av1DecoderMode,
                                 preferDolbyVisionOverHdr10Plus = preferDolbyVision,
                                 audioPassthroughPolicy = audioPassthroughPolicy,
@@ -350,6 +355,8 @@ data class PlayerCreation(
 // Code is adapted from https://github.com/androidx/media/blob/release/libraries/exoplayer/src/main/java/androidx/media3/exoplayer/DefaultRenderersFactory.java#L436
 class WholphinRenderersFactory(
     context: Context,
+    private val h264DecoderMode: VideoDecoderMode = VideoDecoderMode.VIDEO_DECODER_AUTO,
+    private val h265DecoderMode: VideoDecoderMode = VideoDecoderMode.VIDEO_DECODER_AUTO,
     private val av1DecoderMode: Av1DecoderMode,
     private val preferDolbyVisionOverHdr10Plus: Boolean = false,
     private val audioPassthroughPolicy: AudioPassthroughPolicy =
@@ -393,7 +400,12 @@ class WholphinRenderersFactory(
                 codecAdapterFactory
             }
 
-        val hardwareAv1 = hasHardwareAv1Decoder()
+        val hardwareH264 = hasHardwareDecoder(MimeTypes.VIDEO_H264)
+        val softwareH264 = hasSoftwareDecoder(MimeTypes.VIDEO_H264)
+        val hardwareH265 = hasHardwareDecoder(MimeTypes.VIDEO_H265)
+        val softwareH265 = hasSoftwareDecoder(MimeTypes.VIDEO_H265)
+        val hardwareAv1 = hasHardwareDecoder(MimeTypes.VIDEO_AV1)
+        val softwareAv1 = hasSoftwareDecoder(MimeTypes.VIDEO_AV1)
         val dav1dAvailable = isDav1dRendererAvailable()
         val useSoftwareAv1 =
             dav1dAvailable &&
@@ -403,16 +415,24 @@ class WholphinRenderersFactory(
                     else -> false
                 }
         val effectiveSelector =
-            if (av1DecoderMode == Av1DecoderMode.AV1_HARDWARE) {
-                HardwareOnlyAv1CodecSelector(mediaCodecSelector)
-            } else {
-                mediaCodecSelector
-            }
+            VideoCodecPolicySelector(
+                delegate = mediaCodecSelector,
+                h264Mode = h264DecoderMode,
+                h265Mode = h265DecoderMode,
+                av1Mode = av1DecoderMode,
+            )
 
         Timber.i(
-            "AV1 mode=%s hardware=%s dav1d=%s softwareSelected=%s",
+            "Video decoder policy H264=%s(hw=%s sw=%s) H265=%s(hw=%s sw=%s) AV1=%s(hw=%s sw=%s dav1d=%s preferredSoftware=%s)",
+            h264DecoderMode,
+            hardwareH264,
+            softwareH264,
+            h265DecoderMode,
+            hardwareH265,
+            softwareH265,
             av1DecoderMode,
             hardwareAv1,
+            softwareAv1,
             dav1dAvailable,
             useSoftwareAv1,
         )
@@ -449,28 +469,74 @@ class WholphinRenderersFactory(
     }
 }
 
-private class HardwareOnlyAv1CodecSelector(
+private enum class DecoderPolicy {
+    AUTO,
+    HARDWARE,
+    SOFTWARE,
+}
+
+private class VideoCodecPolicySelector(
     private val delegate: MediaCodecSelector,
+    private val h264Mode: VideoDecoderMode,
+    private val h265Mode: VideoDecoderMode,
+    private val av1Mode: Av1DecoderMode,
 ) : MediaCodecSelector {
     override fun getDecoderInfos(
         mimeType: String,
         requiresSecureDecoder: Boolean,
         requiresTunnelingDecoder: Boolean,
     ) = delegate.getDecoderInfos(mimeType, requiresSecureDecoder, requiresTunnelingDecoder).let { infos ->
-        if (!mimeType.equals(MimeTypes.VIDEO_AV1, ignoreCase = true)) infos
-        else infos.filterNot { isSoftwareCodecName(it.name) }
+        val policy =
+            when {
+                mimeType.equals(MimeTypes.VIDEO_H264, ignoreCase = true) -> h264Mode.toDecoderPolicy()
+                mimeType.equals(MimeTypes.VIDEO_H265, ignoreCase = true) -> h265Mode.toDecoderPolicy()
+                mimeType.equals(MimeTypes.VIDEO_AV1, ignoreCase = true) -> av1Mode.toDecoderPolicy()
+                else -> return@let infos
+            }
+        when (policy) {
+            DecoderPolicy.HARDWARE -> infos.filterNot { isSoftwareCodecName(it.name) }
+            DecoderPolicy.SOFTWARE -> infos.filter { isSoftwareCodecName(it.name) }
+            DecoderPolicy.AUTO -> infos.sortedBy { isSoftwareCodecName(it.name) }
+        }
     }
 }
 
-private fun hasHardwareAv1Decoder(): Boolean =
+private fun VideoDecoderMode.toDecoderPolicy(): DecoderPolicy =
+    when (this) {
+        VideoDecoderMode.VIDEO_DECODER_HARDWARE -> DecoderPolicy.HARDWARE
+        VideoDecoderMode.VIDEO_DECODER_SOFTWARE -> DecoderPolicy.SOFTWARE
+        else -> DecoderPolicy.AUTO
+    }
+
+private fun Av1DecoderMode.toDecoderPolicy(): DecoderPolicy =
+    when (this) {
+        Av1DecoderMode.AV1_HARDWARE -> DecoderPolicy.HARDWARE
+        Av1DecoderMode.AV1_SOFTWARE -> DecoderPolicy.SOFTWARE
+        else -> DecoderPolicy.AUTO
+    }
+
+private fun hasHardwareDecoder(mimeType: String): Boolean =
     runCatching {
         MediaCodecList(MediaCodecList.REGULAR_CODECS).codecInfos.any { info ->
             !info.isEncoder &&
-                info.supportedTypes.any { it.equals(MimeTypes.VIDEO_AV1, ignoreCase = true) } &&
+                info.supportedTypes.any { it.equals(mimeType, ignoreCase = true) } &&
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     info.isHardwareAccelerated
                 } else {
                     !isSoftwareCodecName(info.name)
+                }
+        }
+    }.getOrDefault(false)
+
+private fun hasSoftwareDecoder(mimeType: String): Boolean =
+    runCatching {
+        MediaCodecList(MediaCodecList.REGULAR_CODECS).codecInfos.any { info ->
+            !info.isEncoder &&
+                info.supportedTypes.any { it.equals(mimeType, ignoreCase = true) } &&
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    info.isSoftwareOnly
+                } else {
+                    isSoftwareCodecName(info.name)
                 }
         }
     }.getOrDefault(false)

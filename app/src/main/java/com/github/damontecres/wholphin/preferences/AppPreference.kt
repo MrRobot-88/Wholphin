@@ -470,6 +470,33 @@ sealed interface AppPreference<Pref, T> {
                 valueToIndex = { if (it != DoviP7Mode.UNRECOGNIZED) it.number else 0 },
             )
 
+        val H264Decoder =
+            AppChoicePreference<AppPreferences, VideoDecoderMode>(
+                title = R.string.h264_decoder_mode,
+                defaultValue = VideoDecoderMode.VIDEO_DECODER_AUTO,
+                getter = { it.playbackPreferences.overrides.h264DecoderMode },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { h264DecoderMode = value }
+                },
+                displayValues = R.array.video_decoder_modes,
+                subtitles = R.array.video_decoder_modes_summary,
+                indexToValue = { VideoDecoderMode.forNumber(it) },
+                valueToIndex = { if (it != VideoDecoderMode.UNRECOGNIZED) it.number else 0 },
+            )
+
+        val H265Decoder =
+            AppChoicePreference<AppPreferences, VideoDecoderMode>(
+                title = R.string.h265_decoder_mode,
+                defaultValue = VideoDecoderMode.VIDEO_DECODER_AUTO,
+                getter = { it.playbackPreferences.overrides.h265DecoderMode },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { h265DecoderMode = value }
+                },
+                displayValues = R.array.video_decoder_modes,
+                subtitles = R.array.video_decoder_modes_summary,
+                indexToValue = { VideoDecoderMode.forNumber(it) },
+                valueToIndex = { if (it != VideoDecoderMode.UNRECOGNIZED) it.number else 0 },
+            )
         val Av1Decoder =
             AppChoicePreference<AppPreferences, Av1DecoderMode>(
                 title = R.string.av1_decoder_mode,
@@ -1222,6 +1249,8 @@ private val ExoPlayerSettings =
         AppPreference.AssSubtitleMode,
         AppPreference.DirectPlayPgs,
         AppPreference.DoviProfile7Mode,
+        AppPreference.H264Decoder,
+        AppPreference.H265Decoder,
         AppPreference.Av1Decoder,
         AppPreference.AudioPassthrough,
         AppPreference.AudioPassthroughCodecs,

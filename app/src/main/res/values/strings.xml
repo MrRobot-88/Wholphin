@@ -872,6 +872,24 @@
         <item>@string/dovi_p7_off_summary</item>
     </array>
 
+    <string name="h264_decoder_mode">H.264 / AVC decoder</string>
+    <string name="h265_decoder_mode">H.265 / HEVC decoder</string>
+    <string name="video_decoder_auto">Auto</string>
+    <string name="video_decoder_hardware">Hardware only</string>
+    <string name="video_decoder_software">Software only</string>
+    <string name="video_decoder_auto_summary">Prefer hardware decoding when available, with software MediaCodec fallback</string>
+    <string name="video_decoder_hardware_summary">Use hardware MediaCodec decoders only</string>
+    <string name="video_decoder_software_summary">Use Android software MediaCodec decoders only</string>
+    <array name="video_decoder_modes">
+        <item>@string/video_decoder_auto</item>
+        <item>@string/video_decoder_hardware</item>
+        <item>@string/video_decoder_software</item>
+    </array>
+    <array name="video_decoder_modes_summary">
+        <item>@string/video_decoder_auto_summary</item>
+        <item>@string/video_decoder_hardware_summary</item>
+        <item>@string/video_decoder_software_summary</item>
+    </array>
     <string name="av1_decoder_mode">AV1 decoder</string>
     <string name="av1_decoder_auto">Auto</string>
     <string name="av1_decoder_hardware">Hardware only</string>

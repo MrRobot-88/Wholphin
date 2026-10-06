@@ -54,6 +54,12 @@ enum Av1DecoderMode {
   AV1_SOFTWARE = 2;
 }
 
+enum VideoDecoderMode {
+  VIDEO_DECODER_AUTO = 0;
+  VIDEO_DECODER_HARDWARE = 1;
+  VIDEO_DECODER_SOFTWARE = 2;
+}
+
 enum AudioPassthroughMode {
   AUDIO_PT_AUTO = 0;
   AUDIO_PT_DISABLED = 1;
@@ -90,6 +96,8 @@ message PlaybackOverrides{
   AudioPassthroughMode audio_passthrough_mode = 11;
   repeated AudioPassthroughCodec audio_passthrough_codecs = 12;
   DoviP7Mode dovi_p7_mode = 13;
+  VideoDecoderMode h264_decoder_mode = 14;
+  VideoDecoderMode h265_decoder_mode = 15;
 }
 
 message PlaybackPreferences {
