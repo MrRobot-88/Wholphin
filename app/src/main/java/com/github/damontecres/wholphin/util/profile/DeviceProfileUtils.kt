@@ -73,6 +73,7 @@ fun createDeviceProfile(
     pgsDirectPlay: Boolean,
     dolbyVisionELDirectPlay: Boolean,
     decodeAv1: Boolean,
+    hardwareAv1Only: Boolean = false,
     jellyfinTenEleven: Boolean,
     preferAc3ForSurround: Boolean,
     maxResolution: Int,
@@ -107,7 +108,7 @@ fun createDeviceProfile(
         } else {
             mediaTest.getAVCHigh10Level()
         }
-    val supportsAV1 = mediaTest.supportsAV1()
+    val supportsAV1 = if (hardwareAv1Only) mediaTest.supportsHardwareAV1() else mediaTest.supportsAV1()
     val supportsAV1Main10 = mediaTest.supportsAV1Main10()
     val supportsVC1 = mediaTest.supportsVc1()
     val maxResolutionAVC = mediaTest.getMaxResolution(MimeTypes.VIDEO_H264).min(maxResolution)

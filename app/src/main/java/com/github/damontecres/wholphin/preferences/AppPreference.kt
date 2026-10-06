@@ -467,16 +467,51 @@ sealed interface AppPreference<Pref, T> {
                 summary = R.string.force_dovi_profile_7_summary,
             )
 
-        val DecodeAv1 =
-            AppSwitchPreference<AppPreferences>(
-                title = R.string.software_decoding_av1,
-                defaultValue = true,
-                getter = { it.playbackPreferences.overrides.decodeAv1 },
+        val Av1Decoder =
+            AppChoicePreference<AppPreferences, Av1DecoderMode>(
+                title = R.string.av1_decoder_mode,
+                defaultValue = Av1DecoderMode.AV1_AUTO,
+                getter = { it.playbackPreferences.overrides.av1DecoderMode },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackOverrides { decodeAv1 = value }
+                    prefs.updatePlaybackOverrides { av1DecoderMode = value }
                 },
-                summaryOn = R.string.enabled,
-                summaryOff = R.string.disabled,
+                displayValues = R.array.av1_decoder_modes,
+                subtitles = R.array.av1_decoder_modes_summary,
+                indexToValue = { Av1DecoderMode.forNumber(it) },
+                valueToIndex = { if (it != Av1DecoderMode.UNRECOGNIZED) it.number else 0 },
+            )
+
+        val AudioPassthrough =
+            AppChoicePreference<AppPreferences, AudioPassthroughMode>(
+                title = R.string.audio_passthrough_mode,
+                defaultValue = AudioPassthroughMode.AUDIO_PT_AUTO,
+                getter = { it.playbackPreferences.overrides.audioPassthroughMode },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { audioPassthroughMode = value }
+                },
+                displayValues = R.array.audio_passthrough_modes,
+                subtitles = R.array.audio_passthrough_modes_summary,
+                indexToValue = { AudioPassthroughMode.forNumber(it) },
+                valueToIndex = { if (it != AudioPassthroughMode.UNRECOGNIZED) it.number else 0 },
+            )
+
+        val AudioPassthroughCodecs =
+            AppMultiChoicePreference<AppPreferences, AudioPassthroughCodec>(
+                title = R.string.audio_passthrough_codecs,
+                summary = R.string.audio_passthrough_codecs_summary,
+                defaultValue = AudioPassthroughCodec.entries.filterNot { it == AudioPassthroughCodec.UNRECOGNIZED },
+                allValues = AudioPassthroughCodec.entries.filterNot { it == AudioPassthroughCodec.UNRECOGNIZED },
+                displayValues = R.array.audio_passthrough_codecs,
+                getter = { prefs ->
+                    prefs.playbackPreferences.overrides.audioPassthroughCodecsList
+                        .ifEmpty { AudioPassthroughCodec.entries.filterNot { it == AudioPassthroughCodec.UNRECOGNIZED } }
+                },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides {
+                        clearAudioPassthroughCodecs()
+                        addAllAudioPassthroughCodecs(value)
+                    }
+                },
             )
 
         val CinemaMode =
@@ -1184,7 +1219,9 @@ private val ExoPlayerSettings =
         AppPreference.AssSubtitleMode,
         AppPreference.DirectPlayPgs,
         AppPreference.DirectPlayDoviProfile7,
-        AppPreference.DecodeAv1,
+        AppPreference.Av1Decoder,
+        AppPreference.AudioPassthrough,
+        AppPreference.AudioPassthroughCodecs,
     )
 
 val ExoPlayerPreferences =

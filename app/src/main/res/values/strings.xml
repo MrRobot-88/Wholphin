@@ -845,6 +845,51 @@
         <item></item><!-- Intentionally blank -->
         <item></item><!-- Intentionally blank -->
     </array>
+
+    <string name="av1_decoder_mode">AV1 decoder</string>
+    <string name="av1_decoder_auto">Auto</string>
+    <string name="av1_decoder_hardware">Hardware only</string>
+    <string name="av1_decoder_software">Software (dav1d)</string>
+    <string name="av1_decoder_auto_summary">Prefer hardware AV1 when available; fall back to dav1d software decoding</string>
+    <string name="av1_decoder_hardware_summary">Use Android MediaCodec hardware AV1 only</string>
+    <string name="av1_decoder_software_summary">Prefer dav1d software AV1 decoding</string>
+    <array name="av1_decoder_modes">
+        <item>@string/av1_decoder_auto</item>
+        <item>@string/av1_decoder_hardware</item>
+        <item>@string/av1_decoder_software</item>
+    </array>
+    <array name="av1_decoder_modes_summary">
+        <item>@string/av1_decoder_auto_summary</item>
+        <item>@string/av1_decoder_hardware_summary</item>
+        <item>@string/av1_decoder_software_summary</item>
+    </array>
+
+    <string name="audio_passthrough_mode">Audio passthrough</string>
+    <string name="audio_passthrough_auto">Auto</string>
+    <string name="audio_passthrough_disabled">Disabled</string>
+    <string name="audio_passthrough_manual">Manual</string>
+    <string name="audio_passthrough_auto_summary">Use Android/Media3 route detection automatically</string>
+    <string name="audio_passthrough_disabled_summary">Decode audio locally instead of bitstreaming</string>
+    <string name="audio_passthrough_manual_summary">Allow only the selected passthrough codecs when the audio route supports them</string>
+    <array name="audio_passthrough_modes">
+        <item>@string/audio_passthrough_auto</item>
+        <item>@string/audio_passthrough_disabled</item>
+        <item>@string/audio_passthrough_manual</item>
+    </array>
+    <array name="audio_passthrough_modes_summary">
+        <item>@string/audio_passthrough_auto_summary</item>
+        <item>@string/audio_passthrough_disabled_summary</item>
+        <item>@string/audio_passthrough_manual_summary</item>
+    </array>
+    <string name="audio_passthrough_codecs">Passthrough codecs</string>
+    <string name="audio_passthrough_codecs_summary">Used in Manual mode. Device/HDMI capability checks still apply.</string>
+    <array name="audio_passthrough_codecs">
+        <item>AC-3</item>
+        <item>E-AC-3 / Atmos</item>
+        <item>DTS</item>
+        <item>DTS-HD / DTS:X</item>
+        <item>TrueHD / Atmos</item>
+    </array>
     <string name="stars">Stars</string>
     <string name="tomatoes">Tomatoes</string>
     <string name="sort">Sort</string>

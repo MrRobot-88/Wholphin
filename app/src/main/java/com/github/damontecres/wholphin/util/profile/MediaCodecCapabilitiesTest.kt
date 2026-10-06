@@ -127,6 +127,21 @@ class MediaCodecCapabilitiesTest(
 
     fun supportsAV1(): Boolean = hasCodecForMime(MimeTypes.VIDEO_AV1)
 
+    fun supportsHardwareAV1(): Boolean =
+        mediaCodecList.codecInfos.any { info ->
+            !info.isEncoder &&
+                info.supportedTypes.any { it.equals(MimeTypes.VIDEO_AV1, ignoreCase = true) } &&
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    info.isHardwareAccelerated
+                } else {
+                    val name = info.name.lowercase()
+                    !name.startsWith("omx.google.") &&
+                        !name.startsWith("c2.android.") &&
+                        !name.startsWith("c2.google.") &&
+                        !name.contains("software")
+                }
+        }
+
     fun supportsAV1Main10(): Boolean =
         hasDecoder(
             MimeTypes.VIDEO_AV1,

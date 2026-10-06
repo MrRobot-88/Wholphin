@@ -48,6 +48,26 @@ enum AssPlaybackMode{
   ASS_TRANSCODE = 2;
 }
 
+enum Av1DecoderMode {
+  AV1_AUTO = 0;
+  AV1_HARDWARE = 1;
+  AV1_SOFTWARE = 2;
+}
+
+enum AudioPassthroughMode {
+  AUDIO_PT_AUTO = 0;
+  AUDIO_PT_DISABLED = 1;
+  AUDIO_PT_MANUAL = 2;
+}
+
+enum AudioPassthroughCodec {
+  AUDIO_PT_AC3 = 0;
+  AUDIO_PT_EAC3 = 1;
+  AUDIO_PT_DTS = 2;
+  AUDIO_PT_DTSHD = 3;
+  AUDIO_PT_TRUEHD = 4;
+}
+
 message PlaybackOverrides{
   bool ac3_supported = 1;
   bool downmix_stereo = 2;
@@ -58,6 +78,9 @@ message PlaybackOverrides{
   bool decode_av1 = 7;
   AssPlaybackMode ass_playback_mode = 8;
   int32 max_resolution = 9;
+  Av1DecoderMode av1_decoder_mode = 10;
+  AudioPassthroughMode audio_passthrough_mode = 11;
+  repeated AudioPassthroughCodec audio_passthrough_codecs = 12;
 }
 
 message PlaybackPreferences {

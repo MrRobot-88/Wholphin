@@ -31,6 +31,8 @@ val ffmpegModuleExists =
     providers.provider { project.file("libs/lib-decoder-ffmpeg-release.aar").exists() }
 val av1ModuleExists =
     providers.provider { project.file("libs/lib-decoder-av1-release.aar").exists() }
+val av1JarExists =
+    providers.provider { project.file("libs/lib-decoder-av1.jar").exists() }
 val mpvModuleExists =
     providers.provider { project.file("libs/wholphin-mpv-release.aar").exists() }
 val extensionsRepoActive =
@@ -379,6 +381,9 @@ dependencies {
     if (av1ModuleExists.get()) {
         logger.info("Using local av1 decoder")
         implementation(files("libs/lib-decoder-av1-release.aar"))
+    } else if (av1JarExists.get()) {
+        logger.info("Using local Moonfin-derived dav1d AV1 decoder classes")
+        implementation(files("libs/lib-decoder-av1.jar"))
     } else if (extensionsRepoActive.get()) {
         logger.info("Using prebuilt av1 decoder")
         implementation(libs.wholphin.extensions.av1)
