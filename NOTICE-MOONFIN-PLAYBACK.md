@@ -10,6 +10,7 @@ Parts of this Wholphin fork's Android playback compatibility layer are adapted f
 Adapted/reused components include playback policy and codec compatibility work such as:
 
 - Android Media3 audio passthrough policy logic
+- HDMI / ARC / eARC audio route capability and IEC 61937 carrier probing
 - DTS-HD to DTS core fallback / DTS core extraction
 - dav1d AV1 Media3 extension classes/native libraries used for software AV1 decoding
 - Dolby Vision Profile 7 compatibility code and native libdovi integration (when present in this branch)

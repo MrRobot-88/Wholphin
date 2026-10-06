@@ -111,6 +111,13 @@ class PlayerFactory
                                 prefs.overrides.audioPassthroughMode,
                                 prefs.overrides.audioPassthroughCodecsList,
                             )
+                        val audioRouteCapabilities = AudioRouteCapabilitiesDetector.query(context)
+                        Timber.i(
+                            "Audio passthrough mode=%s allowed=%s detected=%s",
+                            audioPassthroughPolicy.mode,
+                            audioPassthroughPolicy.allowedCodecs.sorted().joinToString(","),
+                            audioRouteCapabilities.describe(),
+                        )
                         val preferDolbyVision =
                             appPreferences.experimentalPreferences
                                 .get { preferDolbyVisionOverHdr10Plus } ?: false
