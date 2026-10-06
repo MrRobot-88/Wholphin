@@ -214,6 +214,14 @@ class MediaCodecCapabilitiesTest(
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
             hasCodecForMime(MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION)
 
+    fun supportsHevcDolbyVisionProfile8(): Boolean =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&
+            hasDecoder(
+                MediaFormat.MIMETYPE_VIDEO_DOLBY_VISION,
+                DolbyVisionProfiles.Profile8,
+                CodecProfileLevel.DolbyVisionLevelHd24,
+            )
+
     // Checks for Dolby Vision Profile 7 (Enhancement Layer) and multi-instance HEVC support
     fun supportsHevcDolbyVisionEL(): Boolean =
         Build.VERSION.SDK_INT >= Build.VERSION_CODES.N &&

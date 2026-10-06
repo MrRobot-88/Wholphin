@@ -4,6 +4,7 @@ import android.content.Context
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.Av1DecoderMode
+import com.github.damontecres.wholphin.preferences.DoviP7Mode
 import com.github.damontecres.wholphin.preferences.ExperimentalPreferences
 import com.github.damontecres.wholphin.preferences.PlaybackOverrides
 import com.github.damontecres.wholphin.preferences.enabled
@@ -62,7 +63,7 @@ class DeviceProfileService
                                 downMixAudio = newConfig.overrides.downmixStereo,
                                 assDirectPlay = newConfig.overrides.assPlaybackMode != AssPlaybackMode.ASS_TRANSCODE,
                                 pgsDirectPlay = newConfig.overrides.directPlayPgs,
-                                dolbyVisionELDirectPlay = newConfig.overrides.directPlayDolbyVisionEL,
+                                dolbyVisionELDirectPlay = newConfig.overrides.doviP7Mode != DoviP7Mode.DOVI_P7_OFF,
                                 decodeAv1 = newConfig.overrides.av1DecoderMode != Av1DecoderMode.AV1_HARDWARE,
                                 hardwareAv1Only = newConfig.overrides.av1DecoderMode == Av1DecoderMode.AV1_HARDWARE,
                                 preferAc3ForSurround = appPrefs.experimentalPreferences.enabled { preferAc3Surround },

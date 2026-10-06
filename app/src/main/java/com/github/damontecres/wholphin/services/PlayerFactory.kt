@@ -27,11 +27,15 @@ import androidx.media3.exoplayer.trackselection.DefaultTrackSelector
 import androidx.media3.exoplayer.video.MediaCodecVideoRenderer
 import androidx.media3.exoplayer.video.VideoRendererEventListener
 import androidx.media3.extractor.DefaultExtractorsFactory
+import androidx.media3.extractor.ExtractorsFactory
+import androidx.media3.extractor.text.DefaultSubtitleParserFactory
+import androidx.media3.extractor.text.SubtitleParser
 import androidx.media3.session.MediaSession
 import com.github.damontecres.wholphin.mpv.MpvPlayer
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
 import com.github.damontecres.wholphin.preferences.Av1DecoderMode
+import com.github.damontecres.wholphin.preferences.DoviP7Mode
 import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
 import com.github.damontecres.wholphin.preferences.PlayerBackend
 import com.github.damontecres.wholphin.preferences.get
@@ -39,14 +43,18 @@ import com.github.damontecres.wholphin.services.hilt.AuthOkHttpClient
 import com.github.damontecres.wholphin.util.BitstreamFilteringCodecAdapterFactory
 import com.github.damontecres.wholphin.util.Hdr10PlusMaskingFilter
 import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.profile.MediaCodecCapabilitiesTest
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.github.peerless2012.ass.media.AssHandler
 import io.github.peerless2012.ass.media.factory.AssRenderersFactory
-import io.github.peerless2012.ass.media.kt.withAssMkvSupport
 import io.github.peerless2012.ass.media.parser.AssSubtitleParserFactory
 import io.github.peerless2012.ass.media.type.AssRenderType
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
+import org.moonfin.nativevideo.DoviCompatExtractorsFactory
+import org.moonfin.nativevideo.DoviCompatMode
+import org.moonfin.nativevideo.DoviRpu
+import org.moonfin.nativevideo.withMoonfinMkvSupport
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -94,6 +102,7 @@ class PlayerFactory
                         val useLibAss =
                             prefs.overrides.assPlaybackMode == AssPlaybackMode.ASS_LIBASS
                         val av1DecoderMode = prefs.overrides.av1DecoderMode
+                        val doviCompatMode = resolveDoviCompatMode(prefs.overrides.doviP7Mode)
                         val audioPassthroughPolicy =
                             AudioPassthroughPolicy.fromPreferences(
                                 prefs.overrides.audioPassthroughMode,
@@ -115,7 +124,6 @@ class PlayerFactory
                                 else -> DefaultRenderersFactory.EXTENSION_RENDERER_MODE_ON
                             }
                         val dataSourceFactory = DefaultDataSource.Factory(context)
-                        val extractorsFactory = createExtractorsFactory()
                         var renderersFactory: RenderersFactory =
                             WholphinRenderersFactory(
                                 context = context,
@@ -138,15 +146,16 @@ class PlayerFactory
                                 renderersFactory = AssRenderersFactory(assHandler, renderersFactory)
                                 DefaultMediaSourceFactory(
                                     dataSourceFactory,
-                                    extractorsFactory.withAssMkvSupport(
-                                        assSubtitleParserFactory,
-                                        assHandler,
+                                    createExtractorsFactory(
+                                        doviMode = doviCompatMode,
+                                        subtitleParserFactory = assSubtitleParserFactory,
+                                        assHandler = assHandler,
                                     ),
                                 ).setSubtitleParserFactory(assSubtitleParserFactory)
                             } else {
                                 DefaultMediaSourceFactory(
                                     dataSourceFactory,
-                                    extractorsFactory,
+                                    createExtractorsFactory(doviMode = doviCompatMode),
                                 )
                             }
                         val disableAudioOffload =
@@ -229,10 +238,71 @@ class PlayerFactory
                 }
         }
 
-        private fun createExtractorsFactory() =
-            DefaultExtractorsFactory()
-                .setConstantBitrateSeekingEnabled(true)
-                .setConstantBitrateSeekingAlwaysEnabled(true)
+        private fun createExtractorsFactory(
+            doviMode: DoviCompatMode = DoviCompatMode.OFF,
+            subtitleParserFactory: SubtitleParser.Factory? = null,
+            assHandler: AssHandler? = null,
+        ): ExtractorsFactory {
+            var factory: ExtractorsFactory =
+                DefaultExtractorsFactory()
+                    .setConstantBitrateSeekingEnabled(true)
+                    .setConstantBitrateSeekingAlwaysEnabled(true)
+
+            if (doviMode == DoviCompatMode.CONVERT || doviMode == DoviCompatMode.STRIP) {
+                factory = factory.withMoonfinMkvSupport(
+                    subtitleParserFactory ?: DefaultSubtitleParserFactory(),
+                    assHandler,
+                )
+                factory = DoviCompatExtractorsFactory(
+                    delegate = factory,
+                    mode = { doviMode },
+                    convertNal62 = DoviRpu::convertP7NalToP8,
+                    onReport = { report ->
+                        Timber.d(
+                            "P7 compat reason=%s requested=%s applied=%s rpu=%s converted=%d dropped=%d detail=%s",
+                            report.reason,
+                            report.requestedMode,
+                            report.appliedMode,
+                            report.rpuSource,
+                            report.rpusConverted,
+                            report.enhancementUnitsDropped,
+                            report.detail,
+                        )
+                    },
+                )
+            } else if (subtitleParserFactory != null && assHandler != null) {
+                factory = factory.withMoonfinMkvSupport(subtitleParserFactory, assHandler)
+            }
+            return factory
+        }
+
+        private fun resolveDoviCompatMode(preference: DoviP7Mode): DoviCompatMode {
+            val mode =
+                when (preference) {
+                    DoviP7Mode.DOVI_P7_NATIVE -> DoviCompatMode.NATIVE
+                    DoviP7Mode.DOVI_P7_CONVERT ->
+                        if (DoviRpu.isAvailable()) DoviCompatMode.CONVERT else DoviCompatMode.STRIP
+                    DoviP7Mode.DOVI_P7_STRIP -> DoviCompatMode.STRIP
+                    DoviP7Mode.DOVI_P7_OFF -> DoviCompatMode.OFF
+                    DoviP7Mode.DOVI_P7_AUTO,
+                    DoviP7Mode.UNRECOGNIZED,
+                    -> {
+                        val capabilities = MediaCodecCapabilitiesTest(context)
+                        when {
+                            capabilities.supportsHevcDolbyVisionEL() -> DoviCompatMode.NATIVE
+                            capabilities.supportsHevcDolbyVisionProfile8() && DoviRpu.isAvailable() -> DoviCompatMode.CONVERT
+                            else -> DoviCompatMode.STRIP
+                        }
+                    }
+                }
+            Timber.i(
+                "Dolby Vision P7 mode preference=%s resolved=%s libdovi=%s",
+                preference,
+                mode,
+                DoviRpu.statusText(),
+            )
+            return mode
+        }
 
         private fun createTrackSelector(
             tunneling: Boolean? = null,

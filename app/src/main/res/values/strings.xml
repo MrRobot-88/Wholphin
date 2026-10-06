@@ -846,6 +846,32 @@
         <item></item><!-- Intentionally blank -->
     </array>
 
+    <string name="dovi_p7_mode">Dolby Vision Profile 7</string>
+    <string name="dovi_p7_auto">Auto</string>
+    <string name="dovi_p7_native">Native P7</string>
+    <string name="dovi_p7_convert">Convert P7 to P8.1</string>
+    <string name="dovi_p7_strip">Strip to HDR10</string>
+    <string name="dovi_p7_off">Off</string>
+    <string name="dovi_p7_auto_summary">Use native P7 when supported, otherwise convert to P8.1 or fall back to HDR10</string>
+    <string name="dovi_p7_native_summary">Leave Profile 7 untouched for devices with native P7 decoding</string>
+    <string name="dovi_p7_convert_summary">Convert the Profile 7 RPU to Profile 8.1 and drop the enhancement layer</string>
+    <string name="dovi_p7_strip_summary">Remove Dolby Vision metadata/enhancement data and play the HDR10-compatible HEVC base layer</string>
+    <string name="dovi_p7_off_summary">Disable Wholphin Profile 7 compatibility handling</string>
+    <array name="dovi_p7_modes">
+        <item>@string/dovi_p7_auto</item>
+        <item>@string/dovi_p7_native</item>
+        <item>@string/dovi_p7_convert</item>
+        <item>@string/dovi_p7_strip</item>
+        <item>@string/dovi_p7_off</item>
+    </array>
+    <array name="dovi_p7_modes_summary">
+        <item>@string/dovi_p7_auto_summary</item>
+        <item>@string/dovi_p7_native_summary</item>
+        <item>@string/dovi_p7_convert_summary</item>
+        <item>@string/dovi_p7_strip_summary</item>
+        <item>@string/dovi_p7_off_summary</item>
+    </array>
+
     <string name="av1_decoder_mode">AV1 decoder</string>
     <string name="av1_decoder_auto">Auto</string>
     <string name="av1_decoder_hardware">Hardware only</string>

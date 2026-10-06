@@ -72,6 +72,14 @@ private fun Provider<String>.getInt() = get().toInt()
 configure<ApplicationExtension> {
     namespace = "com.github.damontecres.wholphin"
     compileSdk = libs.versions.compileSdk.getInt()
+    ndkVersion = "28.2.13676358"
+
+    externalNativeBuild {
+        cmake {
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.22.1"
+        }
+    }
 
     defaultConfig {
         applicationId = "com.github.damontecres.wholphin"

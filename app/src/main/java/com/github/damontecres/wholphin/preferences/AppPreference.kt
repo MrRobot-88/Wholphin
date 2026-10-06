@@ -456,15 +456,18 @@ sealed interface AppPreference<Pref, T> {
                 summaryOff = R.string.disabled,
             )
 
-        val DirectPlayDoviProfile7 =
-            AppSwitchPreference<AppPreferences>(
-                title = R.string.force_dovi_profile_7,
-                defaultValue = false,
-                getter = { it.playbackPreferences.overrides.directPlayDolbyVisionEL },
+        val DoviProfile7Mode =
+            AppChoicePreference<AppPreferences, DoviP7Mode>(
+                title = R.string.dovi_p7_mode,
+                defaultValue = DoviP7Mode.DOVI_P7_AUTO,
+                getter = { it.playbackPreferences.overrides.doviP7Mode },
                 setter = { prefs, value ->
-                    prefs.updatePlaybackOverrides { directPlayDolbyVisionEL = value }
+                    prefs.updatePlaybackOverrides { doviP7Mode = value }
                 },
-                summary = R.string.force_dovi_profile_7_summary,
+                displayValues = R.array.dovi_p7_modes,
+                subtitles = R.array.dovi_p7_modes_summary,
+                indexToValue = { DoviP7Mode.forNumber(it) },
+                valueToIndex = { if (it != DoviP7Mode.UNRECOGNIZED) it.number else 0 },
             )
 
         val Av1Decoder =
@@ -1218,7 +1221,7 @@ private val ExoPlayerSettings =
         AppPreference.Ac3Supported,
         AppPreference.AssSubtitleMode,
         AppPreference.DirectPlayPgs,
-        AppPreference.DirectPlayDoviProfile7,
+        AppPreference.DoviProfile7Mode,
         AppPreference.Av1Decoder,
         AppPreference.AudioPassthrough,
         AppPreference.AudioPassthroughCodecs,

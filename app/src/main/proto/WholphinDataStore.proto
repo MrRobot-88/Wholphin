@@ -68,6 +68,14 @@ enum AudioPassthroughCodec {
   AUDIO_PT_TRUEHD = 4;
 }
 
+enum DoviP7Mode {
+  DOVI_P7_AUTO = 0;
+  DOVI_P7_NATIVE = 1;
+  DOVI_P7_CONVERT = 2;
+  DOVI_P7_STRIP = 3;
+  DOVI_P7_OFF = 4;
+}
+
 message PlaybackOverrides{
   bool ac3_supported = 1;
   bool downmix_stereo = 2;
@@ -81,6 +89,7 @@ message PlaybackOverrides{
   Av1DecoderMode av1_decoder_mode = 10;
   AudioPassthroughMode audio_passthrough_mode = 11;
   repeated AudioPassthroughCodec audio_passthrough_codecs = 12;
+  DoviP7Mode dovi_p7_mode = 13;
 }
 
 message PlaybackPreferences {
