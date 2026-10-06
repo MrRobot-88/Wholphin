@@ -82,12 +82,14 @@ class DebugViewModel
             display.supportedModes.orEmpty()
         }
 
-        val av1Included by lazy {
+        val av1RuntimeInfo by lazy {
             try {
                 Class.forName("androidx.media3.decoder.av1.Libdav1dVideoRenderer")
-                true
-            } catch (_: ClassNotFoundException) {
-                false
+                val clazz = Class.forName("androidx.media3.decoder.av1.Dav1dLibrary")
+                val available = clazz.getMethod("isAvailable").invoke(null) as Boolean
+                "available=$available"
+            } catch (t: Throwable) {
+                "error=${t::class.java.simpleName}"
             }
         }
 
@@ -119,6 +121,7 @@ class DebugViewModel
                                 "DTS" to "audio/vnd.dts",
                                 "DTS-HD" to "audio/vnd.dts.hd",
                                 "TrueHD" to "audio/true-hd",
+                                "Opus" to "audio/opus",
                             ).filter { (_, mime) -> supportsFormat.invoke(null, mime) == true }
                                 .joinToString(",") { (name, _) -> name }
                         "available=true version=$version decoders=$decoders"
@@ -134,7 +137,7 @@ class DebugViewModel
                 System.loadLibrary("player")
                 System.loadLibrary("mpv")
                 true
-            } catch (_: Exception) {
+            } catch (_: Throwable) {
                 false
             }
         }
@@ -171,8 +174,8 @@ class DebugViewModel
                         "Build flavor: ${BuildConfig.FLAVOR}",
                         "Build time: $buildTime",
                         "FFMPEG included: $ffmpegIncluded",
-                        "FFMPEG native: $ffmpegRuntimeInfo",
-                        "AV1 included: $av1Included",
+                        "FFMPEG fallback: $ffmpegRuntimeInfo",
+                        "AV1 dav1d: $av1RuntimeInfo",
                         "libmpv loaded: $libMpvLoaded",
                         "Debug enabled: ${BuildConfig.DEBUG}",
                         "ABIs: ${Build.SUPPORTED_ABIS.toList()}",

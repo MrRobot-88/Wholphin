@@ -1,4 +1,4 @@
-package com.github.damontecres.wholphin
+﻿package com.github.damontecres.wholphin
 
 import android.app.Application
 import android.os.Build
@@ -54,6 +54,7 @@ class WholphinApplication :
 
     override fun onCreate() {
         super.onCreate()
+        logNativeDecoderDiagnostics()
         if (BuildConfig.DEBUG) {
             StrictMode.setThreadPolicy(
                 StrictMode.ThreadPolicy
@@ -107,6 +108,60 @@ class WholphinApplication :
         ACRA.errorReporter.putCustomData("SDK_INT", Build.VERSION.SDK_INT.toString())
     }
 
+    private fun logNativeDecoderDiagnostics() {
+        val tag = "WholphinNative"
+        try {
+            val clazz = Class.forName("androidx.media3.decoder.ffmpeg.FfmpegLibrary")
+            val available = clazz.getMethod("isAvailable").invoke(null) as Boolean
+            if (!available) {
+                Log.w(tag, "FFmpeg fallback available=false")
+            } else {
+                val version = clazz.getMethod("getVersion").invoke(null)?.toString() ?: "unknown"
+                val supports = clazz.getMethod("supportsFormat", String::class.java)
+                val formats =
+                    listOf(
+                        "AC3" to "audio/ac3",
+                        "EAC3" to "audio/eac3",
+                        "DTS" to "audio/vnd.dts",
+                        "DTS-HD" to "audio/vnd.dts.hd",
+                        "TrueHD" to "audio/true-hd",
+                        "Opus" to "audio/opus",
+                    ).filter { (_, mime) -> supports.invoke(null, mime) == true }
+                        .joinToString(",") { (name, _) -> name }
+                Log.i(tag, "FFmpeg fallback available=true version=$version decoders=$formats")
+            }
+        } catch (t: Throwable) {
+            Log.e(tag, "FFmpeg fallback diagnostic failed: ${t::class.java.simpleName}: ${t.message}", t)
+        }
+
+        try {
+            Class.forName("androidx.media3.decoder.av1.Libdav1dVideoRenderer")
+            val clazz = Class.forName("androidx.media3.decoder.av1.Dav1dLibrary")
+            val available = clazz.getMethod("isAvailable").invoke(null) as Boolean
+            Log.i(tag, "AV1 dav1d available=$available")
+        } catch (t: Throwable) {
+            Log.e(tag, "AV1 dav1d diagnostic failed: ${t::class.java.simpleName}: ${t.message}", t)
+        }
+
+        try {
+            System.loadLibrary("player")
+            System.loadLibrary("mpv")
+            Log.i(tag, "MPV native available=true")
+        } catch (t: Throwable) {
+            Log.e(tag, "MPV native diagnostic failed: ${t::class.java.simpleName}: ${t.message}", t)
+        }
+
+        try {
+            val clazz = Class.forName("org.moonfin.nativevideo.DoviRpu")
+            val instance = clazz.getField("INSTANCE").get(null)
+            val available = clazz.getMethod("isAvailable").invoke(instance) as Boolean
+            val status = clazz.getMethod("statusText").invoke(instance)?.toString() ?: "unknown"
+            Log.i(tag, "Dolby Vision P7 libdovi available=$available status=$status")
+        } catch (t: Throwable) {
+            Log.e(tag, "Dolby Vision P7 diagnostic failed: ${t::class.java.simpleName}: ${t.message}", t)
+        }
+    }
+
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
@@ -124,3 +179,4 @@ class WholphinApplication :
         val minimumServerVersion: ServerVersion = Jellyfin.minimumVersion
     }
 }
+

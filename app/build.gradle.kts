@@ -20,6 +20,10 @@ plugins {
     alias(libs.plugins.openapi.generator)
 }
 
+providers.gradleProperty("freshBuildDir").orNull?.let { freshBuildDir ->
+    layout.buildDirectory.set(file(freshBuildDir))
+}
+
 val isCI = providers.environmentVariable("CI").orElse("false").map { it.toBoolean() }
 val shouldSign =
     isCI.zip(
