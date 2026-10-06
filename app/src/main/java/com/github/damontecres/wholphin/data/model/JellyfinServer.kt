@@ -100,4 +100,8 @@ data class JellyfinUserPreferences(
     val preferredSubtitleLanguage: String = UserProfileSettings.USE_USER_PROFILE,
     @ColumnInfo(defaultValue = "USE_USER_PROFILE")
     val subtitleMode: SubtitleModePreference = SubtitleModePreference.USE_USER_PROFILE,
+    @ColumnInfo(defaultValue = "")
+    val streamingRegion: String = "",
+    @ColumnInfo(defaultValue = "")
+    val streamingProviderIds: String = "",
 )
