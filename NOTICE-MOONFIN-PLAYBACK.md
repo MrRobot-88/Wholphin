@@ -12,6 +12,7 @@ Adapted/reused components include playback policy and codec compatibility work s
 - Android Media3 audio passthrough policy logic
 - HDMI / ARC / eARC audio route capability and IEC 61937 carrier probing
 - App-side IEC 61937 audio packing/output for AC-3, E-AC-3, DTS, DTS-HD and TrueHD
+- Byte-exact FFmpeg SPDIF golden-vector tests for the IEC 61937 packers
 - DTS-HD to DTS core fallback / DTS core extraction
 - dav1d AV1 Media3 extension classes/native libraries used for software AV1 decoding
 - Dolby Vision Profile 7 compatibility code and native libdovi integration (when present in this branch)
