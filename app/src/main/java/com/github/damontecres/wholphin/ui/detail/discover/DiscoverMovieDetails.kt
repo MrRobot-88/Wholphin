@@ -39,6 +39,7 @@ import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.api.seerr.model.MovieDetails
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
+import com.github.damontecres.wholphin.data.model.JellyfinUserPreferences
 import com.github.damontecres.wholphin.data.model.LocalTrailer
 import com.github.damontecres.wholphin.data.model.RemoteTrailer
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
@@ -47,6 +48,7 @@ import com.github.damontecres.wholphin.data.model.Trailer
 import com.github.damontecres.wholphin.data.model.hasPermission
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.SeerrUserConfig
+import com.github.damontecres.wholphin.services.resolveStreamingAvailability
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.ui.Cards
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
@@ -65,6 +67,7 @@ import com.github.damontecres.wholphin.util.DataLoadingState
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
+import java.util.Locale
 
 @Composable
 fun DiscoverMovieDetails(
@@ -208,6 +211,16 @@ fun DiscoverMovieDetailsContent(
     val focusRequesters = remember { List(RECOMMENDED_ROW + 1) { FocusRequester() } }
 
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
+    val fallbackStreamingRegion = remember { Locale.getDefault().country.ifBlank { "US" } }
+    val streamingAvailability =
+        remember(movie.watchProviders, preferences.userPreferences, fallbackStreamingRegion) {
+            resolveStreamingAvailability(
+                watchProviders = movie.watchProviders,
+                preferences = preferences.userPreferences ?: JellyfinUserPreferences(),
+                fallbackRegion = fallbackStreamingRegion,
+            )
+        }
+
     LaunchedEffect(Unit) {
         focusRequesters.getOrNull(position)?.tryRequestFocus()
     }
@@ -263,6 +276,12 @@ fun DiscoverMovieDetailsContent(
                                 .padding(bottom = 16.dp)
                                 .focusRequester(focusRequesters[HEADER_ROW]),
                     )
+                    streamingAvailability?.let { availability ->
+                        StreamingProviderButtons(
+                            availability = availability,
+                            modifier = Modifier.padding(bottom = 16.dp),
+                        )
+                    }
                 }
             }
             if (people.isNotEmpty()) {

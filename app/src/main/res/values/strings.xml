@@ -1058,4 +1058,6 @@
     <string name="streaming_services_none_selected">None selected</string>
     <string name="streaming_services_loading">Loading…</string>
     <string name="streaming_services_summary">Choose the services this profile subscribes to</string>
+    <string name="stream_on">Stream on</string>
+    <string name="streaming_link_unavailable">No app or browser can open this streaming link</string>
 </resources>

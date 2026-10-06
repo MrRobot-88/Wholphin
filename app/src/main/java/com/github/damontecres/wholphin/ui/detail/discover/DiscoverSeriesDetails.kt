@@ -35,6 +35,7 @@ import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.DiscoverRating
+import com.github.damontecres.wholphin.data.model.JellyfinUserPreferences
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
 import com.github.damontecres.wholphin.data.model.SeerrPermission
 import com.github.damontecres.wholphin.data.model.Trailer
@@ -43,6 +44,7 @@ import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.services.SeerrUserConfig
 import com.github.damontecres.wholphin.services.TrailerService
 import com.github.damontecres.wholphin.services.jellyfinId
+import com.github.damontecres.wholphin.services.resolveStreamingAvailability
 import com.github.damontecres.wholphin.ui.LocalImageUrlService
 import com.github.damontecres.wholphin.ui.cards.DiscoverItemCard
 import com.github.damontecres.wholphin.ui.cards.DiscoverPersonRow
@@ -72,6 +74,7 @@ import com.github.damontecres.wholphin.util.successValue
 import kotlinx.coroutines.launch
 import org.jellyfin.sdk.model.api.BaseItemKind
 import org.jellyfin.sdk.model.api.ImageType
+import java.util.Locale
 import kotlin.time.Duration.Companion.minutes
 
 @Composable
@@ -233,6 +236,16 @@ fun DiscoverSeriesDetailsContent(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
+    val fallbackStreamingRegion = remember { Locale.getDefault().country.ifBlank { "US" } }
+    val streamingAvailability =
+        remember(series.watchProviders, preferences.userPreferences, fallbackStreamingRegion) {
+            resolveStreamingAvailability(
+                watchProviders = series.watchProviders,
+                preferences = preferences.userPreferences ?: JellyfinUserPreferences(),
+                fallbackRegion = fallbackStreamingRegion,
+            )
+        }
+
 
     var position by rememberInt()
     val focusRequesters = remember { List(RECOMMENDED_ROW + 1) { FocusRequester() } }
@@ -300,6 +313,12 @@ fun DiscoverSeriesDetailsContent(
                                     .padding(bottom = 16.dp)
                                     .focusRequester(focusRequesters[HEADER_ROW]),
                         )
+                        streamingAvailability?.let { availability ->
+                            StreamingProviderButtons(
+                                availability = availability,
+                                modifier = Modifier.padding(start = 32.dp, end = 32.dp, bottom = 16.dp),
+                            )
+                        }
                     }
                 }
 //                item {
