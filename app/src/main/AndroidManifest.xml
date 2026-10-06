@@ -35,6 +35,14 @@
             <action android:name="android.intent.action.VIEW" />
             <data android:mimeType="video/*" />
         </intent>
+        <package android:name="com.netflix.ninja" />
+        <package android:name="com.amazon.amazonvideo.livingroom" />
+        <package android:name="com.amazon.avod.thirdpartyclient" />
+        <package android:name="com.disney.disneyplus" />
+        <package android:name="com.wbd.stream" />
+        <package android:name="com.wbd.hbomax" />
+        <package android:name="com.viaplay.android" />
+        <package android:name="se.svt.android.svtplay" />
     </queries>
 
     <application

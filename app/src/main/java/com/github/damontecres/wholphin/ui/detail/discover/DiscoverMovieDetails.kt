@@ -279,6 +279,7 @@ fun DiscoverMovieDetailsContent(
                     streamingAvailability?.let { availability ->
                         StreamingProviderButtons(
                             availability = availability,
+                            title = movie.title.orEmpty(),
                             modifier = Modifier.padding(bottom = 16.dp),
                         )
                     }

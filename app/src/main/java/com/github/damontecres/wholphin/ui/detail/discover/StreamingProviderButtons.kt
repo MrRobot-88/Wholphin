@@ -1,8 +1,5 @@
-﻿package com.github.damontecres.wholphin.ui.detail.discover
+package com.github.damontecres.wholphin.ui.detail.discover
 
-import android.content.ActivityNotFoundException
-import android.content.Context
-import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -15,15 +12,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import androidx.tv.material3.Button
 import androidx.tv.material3.Text
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.services.StreamingAvailability
+import com.github.damontecres.wholphin.services.launchStreamingProvider
 
 @Composable
 fun StreamingProviderButtons(
     availability: StreamingAvailability,
+    title: String,
     modifier: Modifier = Modifier,
 ) {
     if (availability.subscribedProviders.isEmpty()) return
@@ -41,24 +39,26 @@ fun StreamingProviderButtons(
             ) { provider ->
                 val name = provider.name ?: return@items
                 Button(
-                    enabled = !availability.link.isNullOrBlank(),
                     onClick = {
-                        availability.link?.let { openStreamingProviderLink(context, it) }
+                        val launched =
+                            launchStreamingProvider(
+                                context = context,
+                                providerName = name,
+                                title = title,
+                                fallbackLink = availability.link,
+                            )
+                        if (!launched) {
+                            Toast.makeText(
+                                context,
+                                R.string.streaming_link_unavailable,
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                        }
                     },
                 ) {
                     Text(name)
                 }
             }
         }
-    }
-}
-
-private fun openStreamingProviderLink(context: Context, link: String) {
-    try {
-        val intent = Intent(Intent.ACTION_VIEW, link.toUri())
-            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        context.startActivity(intent)
-    } catch (_: ActivityNotFoundException) {
-        Toast.makeText(context, R.string.streaming_link_unavailable, Toast.LENGTH_SHORT).show()
     }
 }

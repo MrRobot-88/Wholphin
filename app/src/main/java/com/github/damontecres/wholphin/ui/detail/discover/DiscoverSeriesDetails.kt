@@ -316,6 +316,7 @@ fun DiscoverSeriesDetailsContent(
                         streamingAvailability?.let { availability ->
                             StreamingProviderButtons(
                                 availability = availability,
+                                title = series.name.orEmpty(),
                                 modifier = Modifier.padding(start = 32.dp, end = 32.dp, bottom = 16.dp),
                             )
                         }
