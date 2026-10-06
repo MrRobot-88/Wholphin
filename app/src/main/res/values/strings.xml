@@ -1053,4 +1053,9 @@
         <item quantity="one">%1$d Episode</item>
         <item quantity="other">%1$d Episodes</item>
     </plurals>
+    <string name="streaming_services">Streaming services</string>
+    <string name="streaming_region">Streaming region</string>
+    <string name="streaming_services_none_selected">None selected</string>
+    <string name="streaming_services_loading">Loading…</string>
+    <string name="streaming_services_summary">Choose the services this profile subscribes to</string>
 </resources>

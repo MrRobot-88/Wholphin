@@ -44,6 +44,9 @@ import androidx.tv.material3.Text
 import androidx.tv.material3.surfaceColorAtElevation
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.JellyfinUserPreferences
+import com.github.damontecres.wholphin.data.model.resolvedStreamingRegion
+import com.github.damontecres.wholphin.data.model.streamingProviderIdSet
+import com.github.damontecres.wholphin.data.model.withStreamingProviderIds
 import com.github.damontecres.wholphin.preferences.AppChoicePreference
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.SubtitleModePreference
@@ -57,6 +60,7 @@ import com.github.damontecres.wholphin.ui.preferences.PreferenceValidation
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import org.jellyfin.sdk.model.api.SubtitlePlaybackMode
 import timber.log.Timber
+import java.util.Locale
 
 /**
  * Page for showing settings derived from the user's profile on the server
@@ -92,6 +96,17 @@ fun UserProfilePreferencesContent(
     val preferences by viewModel.userAppPreferences.collectAsState()
     val audioLanguagePref by viewModel.audioLanguage.collectAsState()
     val subtitleLanguagePref by viewModel.subtitleLanguage.collectAsState()
+    val streamingRegions by viewModel.streamingRegions.collectAsState()
+    val streamingProviders by viewModel.streamingProviders.collectAsState()
+    val streamingLoading by viewModel.streamingLoading.collectAsState()
+    var showStreamingRegionDialog by remember { mutableStateOf(false) }
+    var showStreamingProvidersDialog by remember { mutableStateOf(false) }
+    val fallbackStreamingRegion = remember { Locale.getDefault().country.ifBlank { "US" } }
+    val selectedStreamingRegion = preferences.resolvedStreamingRegion(fallbackStreamingRegion)
+
+    LaunchedEffect(selectedStreamingRegion) {
+        viewModel.refreshStreamingCatalog(selectedStreamingRegion)
+    }
     var showPreferredLanguageDialog by remember { mutableStateOf<Boolean?>(null) }
 
     var visible by remember { mutableStateOf(false) }
@@ -270,8 +285,76 @@ fun UserProfilePreferencesContent(
                         }
                     }
                 }
+                item {
+                    Text(
+                        text = stringResource(R.string.streaming_services),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        textAlign = TextAlign.Start,
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(top = 16.dp, bottom = 4.dp),
+                    )
+                }
+                item {
+                    val selectedRegionName =
+                        streamingRegions
+                            .firstOrNull { it.iso31661.equals(selectedStreamingRegion, ignoreCase = true) }
+                            ?.let { it.nativeName ?: it.englishName }
+                            ?: selectedStreamingRegion
+                    ClickPreference(
+                        title = stringResource(R.string.streaming_region),
+                        summary = selectedRegionName,
+                        onClick = { showStreamingRegionDialog = true },
+                    )
+                }
+                item {
+                    val selectedIds = preferences.streamingProviderIdSet
+                    val selectedNames =
+                        streamingProviders
+                            .filter { it.id in selectedIds }
+                            .mapNotNull { it.name }
+                    val summary =
+                        when {
+                            streamingLoading -> stringResource(R.string.streaming_services_loading)
+                            selectedNames.isEmpty() -> stringResource(R.string.streaming_services_none_selected)
+                            else -> selectedNames.joinToString(", ")
+                        }
+                    ClickPreference(
+                        title = stringResource(R.string.streaming_services),
+                        summary = summary,
+                        onClick = { showStreamingProvidersDialog = true },
+                    )
+                }
             }
         }
+    }
+    if (showStreamingRegionDialog) {
+        StreamingRegionDialog(
+            regions = streamingRegions,
+            selectedRegion = selectedStreamingRegion,
+            onSelect = { code ->
+                viewModel.updatePreferences { it.copy(streamingRegion = code) }
+                viewModel.refreshStreamingCatalog(code)
+                showStreamingRegionDialog = false
+            },
+            onDismissRequest = { showStreamingRegionDialog = false },
+        )
+    }
+    if (showStreamingProvidersDialog) {
+        StreamingProviderDialog(
+            providers = streamingProviders,
+            selectedProviderIds = preferences.streamingProviderIdSet,
+            onToggle = { id ->
+                viewModel.updatePreferences { current ->
+                    val selected = current.streamingProviderIdSet.toMutableSet()
+                    if (!selected.add(id)) selected.remove(id)
+                    current.withStreamingProviderIds(selected)
+                }
+            },
+            onDismissRequest = { showStreamingProvidersDialog = false },
+        )
     }
     showPreferredLanguageDialog?.let { isAudio ->
         BasicDialog(

@@ -11,6 +11,8 @@ import com.github.damontecres.wholphin.api.seerr.model.SearchGet200ResponseResul
 import com.github.damontecres.wholphin.api.seerr.model.ServiceProfile
 import com.github.damontecres.wholphin.api.seerr.model.TvDetails
 import com.github.damontecres.wholphin.api.seerr.model.TvResult
+import com.github.damontecres.wholphin.api.seerr.model.WatchProviderDetails
+import com.github.damontecres.wholphin.api.seerr.model.WatchProviderRegion
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.data.model.SeerrAvailability
@@ -50,6 +52,23 @@ class SeerrService
         val api: SeerrApiClient get() = seerApi.api
 
         val active get() = seerrServerRepository.active
+
+        suspend fun watchProviderRegions(): List<WatchProviderRegion> =
+            if (active.first()) {
+                api.otherApi.watchprovidersRegionsGet()
+            } else {
+                emptyList()
+            }
+
+        suspend fun watchProviders(region: String): List<WatchProviderDetails> =
+            if (active.first()) {
+                mergeWatchProviderCatalog(
+                    movieProviders = api.otherApi.watchprovidersMoviesGet(region),
+                    seriesProviders = api.otherApi.watchprovidersTvGet(region),
+                )
+            } else {
+                emptyList()
+            }
 
         suspend fun search(
             query: String,

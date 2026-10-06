@@ -4,14 +4,18 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.github.damontecres.wholphin.api.seerr.model.WatchProviderDetails
+import com.github.damontecres.wholphin.api.seerr.model.WatchProviderRegion
 import com.github.damontecres.wholphin.data.JellyfinServerDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.JellyfinUserPreferences
+import com.github.damontecres.wholphin.data.model.resolvedStreamingRegion
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.UserProfileSettings
 import com.github.damontecres.wholphin.services.BackdropService
 import com.github.damontecres.wholphin.services.NavigationManager
 import com.github.damontecres.wholphin.services.ScreensaverService
+import com.github.damontecres.wholphin.services.SeerrService
 import com.github.damontecres.wholphin.ui.combineTriple
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 import com.github.damontecres.wholphin.ui.launchIO
@@ -30,6 +34,7 @@ import kotlinx.coroutines.sync.withLock
 import org.jellyfin.sdk.api.client.ApiClient
 import org.jellyfin.sdk.api.client.extensions.localizationApi
 import org.jellyfin.sdk.model.api.CultureDto
+import java.util.Locale
 import javax.inject.Inject
 
 @HiltViewModel
@@ -44,6 +49,7 @@ class UserPreferencesViewModel
         val screensaverService: ScreensaverService,
         private val serverRepository: ServerRepository,
         private val serverDao: JellyfinServerDao,
+        private val seerrService: SeerrService,
     ) : ViewModel() {
         private val mutex = Mutex()
 
@@ -55,6 +61,15 @@ class UserPreferencesViewModel
                 null,
             )
         private val serverLanguages = MutableStateFlow<List<CultureDto>>(emptyList())
+        private val _streamingRegions = MutableStateFlow<List<WatchProviderRegion>>(emptyList())
+        val streamingRegions: StateFlow<List<WatchProviderRegion>> = _streamingRegions
+
+        private val _streamingProviders = MutableStateFlow<List<WatchProviderDetails>>(emptyList())
+        val streamingProviders: StateFlow<List<WatchProviderDetails>> = _streamingProviders
+
+        private val _streamingLoading = MutableStateFlow(false)
+        val streamingLoading: StateFlow<Boolean> = _streamingLoading
+
 
         @OptIn(ExperimentalCoroutinesApi::class)
         val userAppPreferences: StateFlow<JellyfinUserPreferences> =
@@ -136,6 +151,32 @@ class UserPreferencesViewModel
         init {
             viewModelScope.launchIO {
                 serverLanguages.value = api.localizationApi.getCultures().content
+            }
+        }
+
+        fun refreshStreamingCatalog(regionOverride: String? = null) {
+            viewModelScope.launchIO {
+                val region =
+                    regionOverride
+                        ?.trim()
+                        ?.uppercase()
+                        ?.takeIf { it.length == 2 }
+                        ?: userAppPreferences.value.resolvedStreamingRegion(Locale.getDefault().country)
+                _streamingLoading.value = true
+                try {
+                    if (_streamingRegions.value.isEmpty()) {
+                        _streamingRegions.value =
+                            seerrService
+                                .watchProviderRegions()
+                                .filter { !it.iso31661.isNullOrBlank() }
+                                .sortedBy { it.englishName ?: it.nativeName ?: it.iso31661 }
+                    }
+                    _streamingProviders.value = seerrService.watchProviders(region)
+                } catch (_: Exception) {
+                    _streamingProviders.value = emptyList()
+                } finally {
+                    _streamingLoading.value = false
+                }
             }
         }
 
