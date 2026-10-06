@@ -68,7 +68,7 @@ fun ExpandableDiscoverButtons(
             }
         val icon =
             when (availability) {
-                SeerrAvailability.UNKNOWN -> R.string.fa_download
+                SeerrAvailability.UNKNOWN -> R.string.fa_star
 
                 SeerrAvailability.PENDING,
                 SeerrAvailability.PROCESSING,
@@ -136,7 +136,7 @@ fun ExpandableDiscoverButtons(
             item("request_partial") {
                 ExpandableFaButton(
                     title = R.string.request,
-                    iconStringRes = R.string.fa_download,
+                    iconStringRes = R.string.fa_star,
                     onClick = {
                         requestOnClick.invoke()
                     },
