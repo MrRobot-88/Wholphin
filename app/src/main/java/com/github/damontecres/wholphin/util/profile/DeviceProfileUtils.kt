@@ -72,8 +72,10 @@ fun createDeviceProfile(
     assDirectPlay: Boolean,
     pgsDirectPlay: Boolean,
     dolbyVisionELDirectPlay: Boolean,
-    decodeAv1: Boolean,
-    hardwareAv1Only: Boolean = false,
+    h264DirectPlay: Boolean,
+    h265DirectPlay: Boolean,
+    av1DirectPlay: Boolean,
+    softwareAv1DirectPlay: Boolean,
     jellyfinTenEleven: Boolean,
     preferAc3ForSurround: Boolean,
     maxResolution: Int,
@@ -95,12 +97,12 @@ fun createDeviceProfile(
             }
         }
 
-    val supportsHevc = mediaTest.supportsHevc()
-    val supportsHevcMain10 = mediaTest.supportsHevcMain10()
+    val supportsHevc = h265DirectPlay
+    val supportsHevcMain10 = h265DirectPlay && mediaTest.supportsHevcMain10()
     val hevcMainLevel = mediaTest.getHevcMainLevel()
     val hevcMain10Level = mediaTest.getHevcMain10Level()
-    val supportsAVC = mediaTest.supportsAVC()
-    val supportsAVCHigh10 = mediaTest.supportsAVCHigh10() || supportsHi10P52
+    val supportsAVC = h264DirectPlay
+    val supportsAVCHigh10 = h264DirectPlay && (mediaTest.supportsAVCHigh10() || supportsHi10P52)
     val avcMainLevel = mediaTest.getAVCMainLevel()
     val avcHigh10Level =
         if (supportsHi10P52) {
@@ -108,8 +110,9 @@ fun createDeviceProfile(
         } else {
             mediaTest.getAVCHigh10Level()
         }
-    val supportsAV1 = if (hardwareAv1Only) mediaTest.supportsHardwareAV1() else mediaTest.supportsAV1()
-    val supportsAV1Main10 = mediaTest.supportsAV1Main10()
+    val supportsAV1 = av1DirectPlay
+    val decodeAv1 = softwareAv1DirectPlay
+    val supportsAV1Main10 = softwareAv1DirectPlay || mediaTest.supportsAV1Main10()
     val supportsVC1 = mediaTest.supportsVc1()
     val maxResolutionAVC = mediaTest.getMaxResolution(MimeTypes.VIDEO_H264).min(maxResolution)
     val maxResolutionHevc = mediaTest.getMaxResolution(MimeTypes.VIDEO_H265).min(maxResolution)

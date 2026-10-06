@@ -42,6 +42,7 @@ import com.github.damontecres.wholphin.BuildConfig
 import com.github.damontecres.wholphin.data.ItemPlaybackDao
 import com.github.damontecres.wholphin.data.ServerRepository
 import com.github.damontecres.wholphin.data.model.ItemPlayback
+import com.github.damontecres.wholphin.services.AudioRouteCapabilitiesDetector
 import com.github.damontecres.wholphin.preferences.UserPreferences
 import com.github.damontecres.wholphin.ui.launchDefault
 import com.github.damontecres.wholphin.ui.launchIO
@@ -175,9 +176,15 @@ class DebugViewModel
             }
             viewModelScope.launchDefault {
                 val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+                fun refreshAudioRouteInfo() {
+                    val route = AudioRouteCapabilitiesDetector.query(context)
+                    state.update { it.copy(audioRouteInfo = route.describe()) }
+                }
+                refreshAudioRouteInfo()
                 val callback =
                     object : AudioDeviceCallback() {
                         override fun onAudioDevicesAdded(addedDevices: Array<AudioDeviceInfo>) {
+                            refreshAudioRouteInfo()
                             state.update {
                                 it.copy(
                                     audioInfo =
@@ -193,6 +200,7 @@ class DebugViewModel
                         }
 
                         override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>) {
+                            refreshAudioRouteInfo()
                             state.update {
                                 it.copy(
                                     audioInfo =
@@ -263,6 +271,7 @@ data class DebugState(
     val appInfo: List<String> = emptyList(),
     val deviceInfo: List<String> = emptyList(),
     val displayModes: List<String> = emptyList(),
+    val audioRouteInfo: String = "",
     val audioInfo: List<String> = emptyList(),
 )
 
@@ -469,6 +478,11 @@ fun DebugPage(
                 SubSectionTitle("Display Modes")
                 state.displayModes.forEach {
                     BodyText(it)
+                }
+
+                SubSectionTitle("Audio Route Capabilities")
+                if (state.audioRouteInfo.isNotBlank()) {
+                    BodyText(state.audioRouteInfo)
                 }
 
                 SubSectionTitle("Audio Devices")

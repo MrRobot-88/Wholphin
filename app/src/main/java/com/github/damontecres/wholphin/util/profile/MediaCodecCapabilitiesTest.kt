@@ -125,22 +125,41 @@ class MediaCodecCapabilitiesTest(
             CodecProfileLevel.HEVCMainTierLevel62 to 186,
         )
 
-    fun supportsAV1(): Boolean = hasCodecForMime(MimeTypes.VIDEO_AV1)
-
-    fun supportsHardwareAV1(): Boolean =
+    fun supportsHardwareDecoder(mimeType: String): Boolean =
         mediaCodecList.codecInfos.any { info ->
             !info.isEncoder &&
-                info.supportedTypes.any { it.equals(MimeTypes.VIDEO_AV1, ignoreCase = true) } &&
+                info.supportedTypes.any { it.equals(mimeType, ignoreCase = true) } &&
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                     info.isHardwareAccelerated
                 } else {
-                    val name = info.name.lowercase()
-                    !name.startsWith("omx.google.") &&
-                        !name.startsWith("c2.android.") &&
-                        !name.startsWith("c2.google.") &&
-                        !name.contains("software")
+                    !isSoftwareCodecName(info.name)
                 }
         }
+
+    fun supportsSoftwareDecoder(mimeType: String): Boolean =
+        mediaCodecList.codecInfos.any { info ->
+            !info.isEncoder &&
+                info.supportedTypes.any { it.equals(mimeType, ignoreCase = true) } &&
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    info.isSoftwareOnly
+                } else {
+                    isSoftwareCodecName(info.name)
+                }
+        }
+
+    private fun isSoftwareCodecName(name: String): Boolean {
+        val normalized = name.lowercase()
+        return normalized.startsWith("omx.google.") ||
+            normalized.startsWith("c2.android.") ||
+            normalized.startsWith("c2.google.") ||
+            normalized.contains("ffmpeg") ||
+            normalized.contains("software") ||
+            normalized.endsWith(".sw.decoder")
+    }
+
+    fun supportsAV1(): Boolean = hasCodecForMime(MimeTypes.VIDEO_AV1)
+
+    fun supportsHardwareAV1(): Boolean = supportsHardwareDecoder(MimeTypes.VIDEO_AV1)
 
     fun supportsAV1Main10(): Boolean =
         hasDecoder(
