@@ -925,6 +925,19 @@
         <item>@string/audio_passthrough_disabled_summary</item>
         <item>@string/audio_passthrough_manual_summary</item>
     </array>
+    <string name="audio_passthrough_backend">Passthrough backend</string>
+    <string name="audio_passthrough_backend_platform">Platform / Media3</string>
+    <string name="audio_passthrough_backend_iec61937">IEC 61937 (experimental)</string>
+    <string name="audio_passthrough_backend_platform_summary">Use Android and Media3 native compressed-audio output</string>
+    <string name="audio_passthrough_backend_iec61937_summary">Pack AC-3, E-AC-3, DTS, DTS-HD and TrueHD into IEC 61937 carriers when the active route supports them</string>
+    <array name="audio_passthrough_backends">
+        <item>@string/audio_passthrough_backend_platform</item>
+        <item>@string/audio_passthrough_backend_iec61937</item>
+    </array>
+    <array name="audio_passthrough_backends_summary">
+        <item>@string/audio_passthrough_backend_platform_summary</item>
+        <item>@string/audio_passthrough_backend_iec61937_summary</item>
+    </array>
     <string name="audio_passthrough_codecs">Passthrough codecs</string>
     <string name="audio_passthrough_codecs_summary">Used in Manual mode. Device/HDMI capability checks still apply.</string>
     <array name="audio_passthrough_codecs">

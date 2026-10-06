@@ -525,6 +525,19 @@ sealed interface AppPreference<Pref, T> {
                 valueToIndex = { if (it != AudioPassthroughMode.UNRECOGNIZED) it.number else 0 },
             )
 
+        val AudioPassthroughBackendPreference =
+            AppChoicePreference<AppPreferences, AudioPassthroughBackend>(
+                title = R.string.audio_passthrough_backend,
+                defaultValue = AudioPassthroughBackend.AUDIO_PT_BACKEND_PLATFORM,
+                getter = { it.playbackPreferences.overrides.audioPassthroughBackend },
+                setter = { prefs, value ->
+                    prefs.updatePlaybackOverrides { audioPassthroughBackend = value }
+                },
+                displayValues = R.array.audio_passthrough_backends,
+                subtitles = R.array.audio_passthrough_backends_summary,
+                indexToValue = { AudioPassthroughBackend.forNumber(it) },
+                valueToIndex = { if (it != AudioPassthroughBackend.UNRECOGNIZED) it.number else 0 },
+            )
         val AudioPassthroughCodecs =
             AppMultiChoicePreference<AppPreferences, AudioPassthroughCodec>(
                 title = R.string.audio_passthrough_codecs,
@@ -1253,6 +1266,7 @@ private val ExoPlayerSettings =
         AppPreference.H265Decoder,
         AppPreference.Av1Decoder,
         AppPreference.AudioPassthrough,
+        AppPreference.AudioPassthroughBackendPreference,
         AppPreference.AudioPassthroughCodecs,
     )
 

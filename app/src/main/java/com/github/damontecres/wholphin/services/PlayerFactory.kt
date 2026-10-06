@@ -20,6 +20,7 @@ import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.Renderer
 import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.RenderersFactory
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -34,6 +35,7 @@ import androidx.media3.session.MediaSession
 import com.github.damontecres.wholphin.mpv.MpvPlayer
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AssPlaybackMode
+import com.github.damontecres.wholphin.preferences.AudioPassthroughBackend
 import com.github.damontecres.wholphin.preferences.Av1DecoderMode
 import com.github.damontecres.wholphin.preferences.DoviP7Mode
 import com.github.damontecres.wholphin.preferences.MediaExtensionStatus
@@ -56,6 +58,7 @@ import org.moonfin.nativevideo.DoviCompatExtractorsFactory
 import org.moonfin.nativevideo.DoviCompatMode
 import org.moonfin.nativevideo.DoviRpu
 import org.moonfin.nativevideo.withMoonfinMkvSupport
+import org.moonfin.nativevideo.iec.Iec61937AudioOutputProvider
 import timber.log.Timber
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -111,6 +114,7 @@ class PlayerFactory
                                 prefs.overrides.audioPassthroughMode,
                                 prefs.overrides.audioPassthroughCodecsList,
                             )
+                        val audioPassthroughBackend = prefs.overrides.audioPassthroughBackend
                         val audioRouteCapabilities = AudioRouteCapabilitiesDetector.query(context)
                         Timber.i(
                             "Audio passthrough mode=%s allowed=%s detected=%s",
@@ -142,6 +146,7 @@ class PlayerFactory
                                 av1DecoderMode = av1DecoderMode,
                                 preferDolbyVisionOverHdr10Plus = preferDolbyVision,
                                 audioPassthroughPolicy = audioPassthroughPolicy,
+                                audioPassthroughBackend = audioPassthroughBackend,
                             ).setEnableDecoderFallback(true)
                                 .setExtensionRendererMode(rendererMode)
 
@@ -368,6 +373,8 @@ class WholphinRenderersFactory(
     private val preferDolbyVisionOverHdr10Plus: Boolean = false,
     private val audioPassthroughPolicy: AudioPassthroughPolicy =
         AudioPassthroughPolicy(PassthroughMode.AUTO, emptySet()),
+    private val audioPassthroughBackend: AudioPassthroughBackend =
+        AudioPassthroughBackend.AUDIO_PT_BACKEND_PLATFORM,
 ) : DefaultRenderersFactory(context) {
 
     override fun buildAudioSink(
@@ -375,11 +382,27 @@ class WholphinRenderersFactory(
         enableFloatOutput: Boolean,
         enableAudioOutputPlaybackParams: Boolean,
     ): AudioSink? {
-        val sink = super.buildAudioSink(
-            context,
-            enableFloatOutput,
-            enableAudioOutputPlaybackParams,
-        ) ?: return null
+        val useIec61937 =
+            audioPassthroughBackend == AudioPassthroughBackend.AUDIO_PT_BACKEND_IEC61937 &&
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.N
+        val sink =
+            if (useIec61937) {
+                Timber.i("Audio output backend=IEC61937 mode=%s", audioPassthroughPolicy.mode)
+                DefaultAudioSink.Builder(context)
+                    .setEnableFloatOutput(enableFloatOutput)
+                    .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
+                    .setAudioOutputProvider(Iec61937AudioOutputProvider(context))
+                    .build()
+            } else {
+                if (audioPassthroughBackend == AudioPassthroughBackend.AUDIO_PT_BACKEND_IEC61937) {
+                    Timber.w("IEC61937 backend requested but unavailable below Android 7; using platform Media3")
+                }
+                super.buildAudioSink(
+                    context,
+                    enableFloatOutput,
+                    enableAudioOutputPlaybackParams,
+                ) ?: return null
+            }
         return if (audioPassthroughPolicy.mode == PassthroughMode.AUTO) {
             sink
         } else {
