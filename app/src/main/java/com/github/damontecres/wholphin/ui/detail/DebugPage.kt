@@ -100,6 +100,35 @@ class DebugViewModel
             }
         }
 
+        val ffmpegRuntimeInfo by lazy {
+            if (!ffmpegIncluded) {
+                "available=false"
+            } else {
+                try {
+                    val clazz = Class.forName("androidx.media3.decoder.ffmpeg.FfmpegLibrary")
+                    val available = clazz.getMethod("isAvailable").invoke(null) as Boolean
+                    if (!available) {
+                        "available=false"
+                    } else {
+                        val version = clazz.getMethod("getVersion").invoke(null)?.toString() ?: "unknown"
+                        val supportsFormat = clazz.getMethod("supportsFormat", String::class.java)
+                        val decoders =
+                            listOf(
+                                "AC3" to "audio/ac3",
+                                "EAC3" to "audio/eac3",
+                                "DTS" to "audio/vnd.dts",
+                                "DTS-HD" to "audio/vnd.dts.hd",
+                                "TrueHD" to "audio/true-hd",
+                            ).filter { (_, mime) -> supportsFormat.invoke(null, mime) == true }
+                                .joinToString(",") { (name, _) -> name }
+                        "available=true version=$version decoders=$decoders"
+                    }
+                } catch (t: Throwable) {
+                    "error=${t::class.java.simpleName}"
+                }
+            }
+        }
+
         val libMpvLoaded by lazy {
             try {
                 System.loadLibrary("player")
@@ -142,6 +171,7 @@ class DebugViewModel
                         "Build flavor: ${BuildConfig.FLAVOR}",
                         "Build time: $buildTime",
                         "FFMPEG included: $ffmpegIncluded",
+                        "FFMPEG native: $ffmpegRuntimeInfo",
                         "AV1 included: $av1Included",
                         "libmpv loaded: $libMpvLoaded",
                         "Debug enabled: ${BuildConfig.DEBUG}",
