@@ -5,6 +5,7 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import androidx.core.net.toUri
 import java.util.Locale
 
@@ -42,6 +43,22 @@ private val STREAMING_PROVIDER_APPS =
             matches = setOf("svt play", "svt"),
             packages = listOf("se.svt.android.svtplay"),
         ),
+        StreamingProviderApp(
+            matches = setOf("apple tv plus", "apple tv"),
+            packages = listOf(
+                "com.apple.atve.androidtv.appletv",
+                "com.apple.atve.sony.appletv",
+                "com.apple.atve.amazon.appletv",
+            ),
+        ),
+        StreamingProviderApp(
+            matches = setOf("skyshowtime"),
+            packages = listOf("com.skyshowtime.skyshowtime.google"),
+        ),
+        StreamingProviderApp(
+            matches = setOf("paramount plus", "paramount"),
+            packages = listOf("com.cbs.ott"),
+        ),
     )
 
 internal fun streamingProviderPackages(providerName: String?): List<String> {
@@ -62,10 +79,32 @@ fun launchStreamingProvider(
     providerName: String?,
     title: String,
     fallbackLink: String?,
+    directLinks: StreamingProviderDirectLinks? = null,
 ): Boolean {
     val packageManager = context.packageManager
+    val packages = streamingProviderPackages(providerName)
+    val isFireTv = isAmazonFireTv()
 
-    for (packageName in streamingProviderPackages(providerName)) {
+    if (directLinks != null) {
+        val appLinks = directLinks.preferredAppLinks(isFireTv)
+        for (packageName in packages) {
+            for (link in appLinks) {
+                val intent =
+                    Intent(Intent.ACTION_VIEW, link.toUri())
+                        .setPackage(packageName)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                if (canResolve(packageManager, intent) && tryStart(context, intent)) return true
+            }
+        }
+
+        // Some provider deep links can resolve themselves even when the package name differs
+        // by device/market. This is especially useful on Fire TV variants.
+        for (link in appLinks) {
+            if (launchExternalLink(context, link)) return true
+        }
+    }
+
+    for (packageName in packages) {
         if (fallbackLink?.isNotBlank() == true) {
             val appLink =
                 Intent(Intent.ACTION_VIEW, fallbackLink.toUri())
@@ -92,15 +131,25 @@ fun launchStreamingProvider(
         }
     }
 
-    if (!fallbackLink.isNullOrBlank()) {
-        val browserIntent =
-            Intent(Intent.ACTION_VIEW, fallbackLink.toUri())
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        if (tryStart(context, browserIntent)) return true
-    }
-
+    directLinks?.standardWeb?.let { if (launchExternalLink(context, it)) return true }
+    if (!fallbackLink.isNullOrBlank() && launchExternalLink(context, fallbackLink)) return true
     return false
 }
+
+fun launchExternalLink(
+    context: Context,
+    link: String,
+): Boolean {
+    if (link.isBlank()) return false
+    return tryStart(
+        context,
+        Intent(Intent.ACTION_VIEW, link.toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+    )
+}
+
+private fun isAmazonFireTv(): Boolean =
+    Build.MANUFACTURER.equals("Amazon", ignoreCase = true) ||
+        Build.MODEL.orEmpty().startsWith("AFT", ignoreCase = true)
 
 private fun canResolve(packageManager: PackageManager, intent: Intent): Boolean =
     intent.resolveActivity(packageManager) != null

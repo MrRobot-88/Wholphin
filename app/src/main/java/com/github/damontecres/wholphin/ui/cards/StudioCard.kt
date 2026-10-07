@@ -29,7 +29,6 @@ import androidx.tv.material3.MaterialTheme
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
-import coil3.request.crossfade
 import com.github.damontecres.wholphin.ui.AspectRatios
 import com.github.damontecres.wholphin.ui.PreviewTvSpec
 import com.github.damontecres.wholphin.ui.components.Studio
@@ -90,7 +89,6 @@ fun StudioCard(
                         ImageRequest
                             .Builder(LocalContext.current)
                             .data(imageUrl)
-                            .crossfade(true)
                             .build(),
                     contentScale = ContentScale.FillBounds,
                     contentDescription = null,

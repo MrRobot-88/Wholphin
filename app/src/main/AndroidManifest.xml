@@ -43,6 +43,11 @@
         <package android:name="com.wbd.hbomax" />
         <package android:name="com.viaplay.android" />
         <package android:name="se.svt.android.svtplay" />
+        <package android:name="com.skyshowtime.skyshowtime.google" />
+        <package android:name="com.cbs.ott" />
+        <package android:name="com.apple.atve.androidtv.appletv" />
+        <package android:name="com.apple.atve.sony.appletv" />
+        <package android:name="com.apple.atve.amazon.appletv" />
     </queries>
 
     <application

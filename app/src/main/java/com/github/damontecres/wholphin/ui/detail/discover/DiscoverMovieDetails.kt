@@ -211,7 +211,7 @@ fun DiscoverMovieDetailsContent(
     val focusRequesters = remember { List(RECOMMENDED_ROW + 1) { FocusRequester() } }
 
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
-    val fallbackStreamingRegion = remember { Locale.getDefault().country.ifBlank { "US" } }
+    val fallbackStreamingRegion = remember { Locale.getDefault().country.ifBlank { "SE" } }
     val streamingAvailability =
         remember(movie.watchProviders, preferences.userPreferences, fallbackStreamingRegion) {
             resolveStreamingAvailability(
@@ -280,6 +280,8 @@ fun DiscoverMovieDetailsContent(
                         StreamingProviderButtons(
                             availability = availability,
                             title = movie.title.orEmpty(),
+                            tmdbId = movie.id,
+                            objectType = "movie",
                             modifier = Modifier.padding(bottom = 16.dp),
                         )
                     }

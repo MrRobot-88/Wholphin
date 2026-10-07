@@ -50,7 +50,6 @@ import coil3.annotation.ExperimentalCoilApi
 import coil3.compose.AsyncImage
 import coil3.compose.useExistingImageAsPlaceholder
 import coil3.request.ImageRequest
-import coil3.request.crossfade
 import com.github.damontecres.wholphin.R
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.preferences.UserPreferences
@@ -239,7 +238,6 @@ fun CollectionFolderListDetails(
                 ImageRequest
                     .Builder(LocalContext.current)
                     .data(imageUrl)
-                    .crossfade(300)
                     .useExistingImageAsPlaceholder(true)
                     .build(),
             contentDescription = null,

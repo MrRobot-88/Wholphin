@@ -1,4 +1,4 @@
-﻿package com.github.damontecres.wholphin.data.model
+package com.github.damontecres.wholphin.data.model
 
 val JellyfinUserPreferences.streamingProviderIdSet: Set<Int>
     get() =
@@ -28,4 +28,4 @@ fun JellyfinUserPreferences.resolvedStreamingRegion(fallbackRegion: String): Str
         .uppercase()
         .takeIf { it.length == 2 }
         ?: fallbackRegion.trim().uppercase().takeIf { it.length == 2 }
-        ?: "US"
+        ?: "SE"

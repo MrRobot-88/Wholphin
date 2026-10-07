@@ -14,7 +14,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
-import coil3.request.crossfade
 import com.github.damontecres.wholphin.ui.components.CircularProgress
 import com.github.damontecres.wholphin.ui.isNotNullOrBlank
 
@@ -32,7 +31,6 @@ fun ImageLoadingPlaceholder(
                     ImageRequest
                         .Builder(LocalContext.current)
                         .data(thumbnailUrl)
-                        .crossfade(true)
                         .build(),
                 contentDescription = null,
                 contentScale = ContentScale.Fit,

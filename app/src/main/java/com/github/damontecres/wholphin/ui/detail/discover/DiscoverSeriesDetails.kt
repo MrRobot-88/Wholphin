@@ -236,7 +236,7 @@ fun DiscoverSeriesDetailsContent(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val bringIntoViewRequester = remember { BringIntoViewRequester() }
-    val fallbackStreamingRegion = remember { Locale.getDefault().country.ifBlank { "US" } }
+    val fallbackStreamingRegion = remember { Locale.getDefault().country.ifBlank { "SE" } }
     val streamingAvailability =
         remember(series.watchProviders, preferences.userPreferences, fallbackStreamingRegion) {
             resolveStreamingAvailability(
@@ -317,6 +317,8 @@ fun DiscoverSeriesDetailsContent(
                             StreamingProviderButtons(
                                 availability = availability,
                                 title = series.name.orEmpty(),
+                                tmdbId = series.id,
+                                objectType = "show",
                                 modifier = Modifier.padding(start = 32.dp, end = 32.dp, bottom = 16.dp),
                             )
                         }

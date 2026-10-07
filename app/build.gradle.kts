@@ -24,6 +24,17 @@ providers.gradleProperty("freshBuildDir").orNull?.let { freshBuildDir ->
     layout.buildDirectory.set(file(freshBuildDir))
 }
 
+val localBuildProperties =
+    Properties().apply {
+        val file = rootProject.file("local.properties")
+        if (file.exists()) file.inputStream().use(::load)
+    }
+val justWatchPartnerToken =
+    providers.environmentVariable("JUSTWATCH_PARTNER_TOKEN").orNull?.takeIf { it.isNotBlank() }
+        ?: localBuildProperties.getProperty("justwatch.partner.token", "")
+val escapedJustWatchPartnerToken =
+    justWatchPartnerToken.replace("\\", "\\\\").replace("\"", "\\\"")
+
 val isCI = providers.environmentVariable("CI").orElse("false").map { it.toBoolean() }
 val shouldSign =
     isCI.zip(
@@ -94,6 +105,7 @@ configure<ApplicationExtension> {
         testInstrumentationRunner = "com.github.damontecres.wholphin.test.WholphinTestRunner"
 
         buildConfigField("long", "BUILD_TIME", System.currentTimeMillis().toString())
+        buildConfigField("String", "JUSTWATCH_PARTNER_TOKEN", "\"$escapedJustWatchPartnerToken\"")
     }
 
     signingConfigs {

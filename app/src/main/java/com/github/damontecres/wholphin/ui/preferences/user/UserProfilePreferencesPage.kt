@@ -101,7 +101,7 @@ fun UserProfilePreferencesContent(
     val streamingLoading by viewModel.streamingLoading.collectAsState()
     var showStreamingRegionDialog by remember { mutableStateOf(false) }
     var showStreamingProvidersDialog by remember { mutableStateOf(false) }
-    val fallbackStreamingRegion = remember { Locale.getDefault().country.ifBlank { "US" } }
+    val fallbackStreamingRegion = remember { Locale.getDefault().country.ifBlank { "SE" } }
     val selectedStreamingRegion = preferences.resolvedStreamingRegion(fallbackStreamingRegion)
 
     LaunchedEffect(selectedStreamingRegion) {
