@@ -89,10 +89,7 @@ fun launchStreamingProvider(
         val appLinks = directLinks.preferredAppLinks(isFireTv)
         for (packageName in packages) {
             for (link in appLinks) {
-                val intent =
-                    Intent(Intent.ACTION_VIEW, link.toUri())
-                        .setPackage(packageName)
-                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                val intent = buildViewIntent(link, packageName) ?: continue
                 if (canResolve(packageManager, intent) && tryStart(context, intent)) return true
             }
         }
@@ -106,11 +103,8 @@ fun launchStreamingProvider(
 
     for (packageName in packages) {
         if (fallbackLink?.isNotBlank() == true) {
-            val appLink =
-                Intent(Intent.ACTION_VIEW, fallbackLink.toUri())
-                    .setPackage(packageName)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            if (canResolve(packageManager, appLink) && tryStart(context, appLink)) return true
+            val appLink = buildViewIntent(fallbackLink, packageName)
+            if (appLink != null && canResolve(packageManager, appLink) && tryStart(context, appLink)) return true
         }
 
         if (title.isNotBlank()) {
@@ -141,13 +135,30 @@ fun launchExternalLink(
     link: String,
 ): Boolean {
     if (link.isBlank()) return false
-    return tryStart(
-        context,
-        Intent(Intent.ACTION_VIEW, link.toUri()).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
-    )
+    val intent = buildViewIntent(link, null) ?: return false
+    return tryStart(context, intent)
 }
 
-private fun isAmazonFireTv(): Boolean =
+private fun buildViewIntent(
+    link: String,
+    packageName: String?,
+): Intent? =
+    try {
+        val intent =
+            if (link.startsWith("intent://", ignoreCase = true)) {
+                Intent.parseUri(link, Intent.URI_INTENT_SCHEME)
+            } else {
+                Intent(Intent.ACTION_VIEW, link.toUri())
+            }
+        if (!packageName.isNullOrBlank() && intent.`package`.isNullOrBlank()) {
+            intent.setPackage(packageName)
+        }
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    } catch (_: Exception) {
+        null
+    }
+
+internal fun isAmazonFireTv(): Boolean =
     Build.MANUFACTURER.equals("Amazon", ignoreCase = true) ||
         Build.MODEL.orEmpty().startsWith("AFT", ignoreCase = true)
 

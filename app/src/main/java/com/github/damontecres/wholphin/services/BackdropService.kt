@@ -79,13 +79,12 @@ class BackdropService
             itemId: String,
             imageUrl: String?,
         ) = withContext(WholphinDispatchers.IO) {
-            if (backdropFlow.firstOrNull()?.imageUrl != imageUrl) {
-                _backdropFlow.update {
-                    it.copy(
-                        itemId = itemId,
-                        imageUrl = null,
-                    )
-                }
+            val current = _backdropFlow.value
+            if (current.itemId != itemId || current.imageUrl != imageUrl) {
+                // Mark the newest focus target immediately, but keep the already-decoded
+                // backdrop visible while the new one is debounced/loaded. This avoids a
+                // black flash on every D-pad move.
+                _backdropFlow.update { it.copy(itemId = itemId) }
                 extractColors(itemId, imageUrl)
             }
         }
@@ -115,17 +114,27 @@ class BackdropService
             val dynamicEnabled =
                 backdropStyle == BackdropStyle.BACKDROP_DYNAMIC_COLOR ||
                     backdropStyle == BackdropStyle.UNRECOGNIZED
-            val (primaryColor, secondaryColor, tertiaryColor) =
-                if (dynamicEnabled) {
-                    extractColorsFromBackdrop(imageUrl)
-                } else {
-                    ExtractedColors.DEFAULT
-                }
+
+            // Publish the new image as soon as the focus debounce has passed. Dynamic
+            // palette extraction can finish afterwards and must never hold up the image.
             _backdropFlow.update {
                 if (it.itemId == itemId) {
-                    BackdropResult(
-                        itemId = itemId,
+                    it.copy(
                         imageUrl = imageUrl,
+                        primaryColor = Color.Unspecified,
+                        secondaryColor = Color.Unspecified,
+                        tertiaryColor = Color.Unspecified,
+                    )
+                } else {
+                    it
+                }
+            }
+            if (!dynamicEnabled || _backdropFlow.value.itemId != itemId) return
+
+            val (primaryColor, secondaryColor, tertiaryColor) = extractColorsFromBackdrop(imageUrl)
+            _backdropFlow.update {
+                if (it.itemId == itemId && it.imageUrl == imageUrl) {
+                    it.copy(
                         primaryColor = primaryColor,
                         secondaryColor = secondaryColor,
                         tertiaryColor = tertiaryColor,

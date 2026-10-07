@@ -128,12 +128,15 @@ class SeriesViewModel
                         .getItem(seriesId)
                         .content
                         .let { BaseItem(it) }
+                // Publish the series immediately. Seasons, episodes and secondary rows
+                // can fill in progressively instead of keeping the whole page behind a spinner.
+                _state.update { it.copy(series = DataLoadingState.Success(series)) }
                 viewModelScope.launchDefault {
                     mediaManagementService.collectCanDelete(flowOf(series)) { canDelete ->
                         _state.update { it.copy(canDeleteSeries = canDelete) }
                     }
                 }
-                backdropService.submit(series)
+                viewModelScope.launchIO { backdropService.submit(series) }
 
                 val seasonsDeferred = getSeasons(series, seasonEpisodeIds?.seasonNumber)
 
@@ -170,8 +173,9 @@ class SeriesViewModel
                         throw ex
                     } catch (ex: Exception) {
                         Timber.e(ex, "Exception fetching seasons/episodes for series %s", seriesId)
-                        _state.update { it.copy(series = DataLoadingState.Error(ex)) }
-                        return@launchIO
+                        // Keep the already-rendered series page usable even if a secondary
+                        // seasons/episodes request fails.
+                        emptyList<BaseItem?>() to EpisodeList.Error(ex)
                     }
                 Timber.v("Done")
 

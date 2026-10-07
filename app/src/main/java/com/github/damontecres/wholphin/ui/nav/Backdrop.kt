@@ -50,7 +50,7 @@ fun Backdrop(
     modifier: Modifier = Modifier,
     enableTopScrim: Boolean = true,
     useExistingImageAsPlaceholder: Boolean = false,
-    crossfadeDuration: Duration = 800.milliseconds,
+    crossfadeDuration: Duration = 200.milliseconds,
 ) {
     val backdrop by viewModel.backdropService.backdropFlow.collectAsStateWithLifecycle()
     Backdrop(
@@ -75,7 +75,7 @@ fun Backdrop(
     modifier: Modifier = Modifier,
     enableTopScrim: Boolean = true,
     useExistingImageAsPlaceholder: Boolean = false,
-    crossfadeDuration: Duration = 800.milliseconds,
+    crossfadeDuration: Duration = 200.milliseconds,
 ) {
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val baseBackgroundColor = MaterialTheme.colorScheme.background
@@ -84,17 +84,17 @@ fun Backdrop(
     ) {
         val animPrimary by animateColorAsState(
             backdrop.primaryColor,
-            animationSpec = tween(1250),
+            animationSpec = tween(250),
             label = "dynamic_backdrop_primary",
         )
         val animSecondary by animateColorAsState(
             backdrop.secondaryColor,
-            animationSpec = tween(1250),
+            animationSpec = tween(250),
             label = "dynamic_backdrop_secondary",
         )
         val animTertiary by animateColorAsState(
             backdrop.tertiaryColor,
-            animationSpec = tween(1250),
+            animationSpec = tween(250),
             label = "dynamic_backdrop_tertiary",
         )
         Box(

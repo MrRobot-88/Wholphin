@@ -25,10 +25,9 @@ import androidx.tv.material3.Button
 import androidx.tv.material3.Text
 import coil3.compose.AsyncImage
 import com.github.damontecres.wholphin.R
-import com.github.damontecres.wholphin.services.JustWatchContentPartnerClient
-import com.github.damontecres.wholphin.services.JustWatchStreamingLinks
+import com.github.damontecres.wholphin.services.JustWatchGraphQlResolver
 import com.github.damontecres.wholphin.services.StreamingAvailability
-import com.github.damontecres.wholphin.services.launchExternalLink
+import com.github.damontecres.wholphin.services.StreamingProviderLinks
 import com.github.damontecres.wholphin.services.launchStreamingProvider
 
 @Composable
@@ -42,17 +41,18 @@ fun StreamingProviderButtons(
     if (availability.subscribedProviders.isEmpty()) return
 
     val context = LocalContext.current
-    var justWatchLinks by
-        remember(tmdbId, objectType, availability.region) {
-            mutableStateOf<JustWatchStreamingLinks?>(null)
+    var streamingLinks by
+        remember(tmdbId, objectType, title, availability.region) {
+            mutableStateOf<StreamingProviderLinks?>(null)
         }
 
-    LaunchedEffect(tmdbId, objectType, availability.region) {
-        justWatchLinks =
+    LaunchedEffect(tmdbId, objectType, title, availability.region) {
+        streamingLinks =
             tmdbId?.takeIf { it > 0 }?.let {
-                JustWatchContentPartnerClient.getStreamingLinks(
+                JustWatchGraphQlResolver.getStreamingLinks(
                     objectType = objectType,
                     tmdbId = it,
+                    title = title,
                     region = availability.region,
                 )
             }
@@ -64,11 +64,6 @@ fun StreamingProviderButtons(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(stringResource(R.string.stream_on))
-            justWatchLinks?.attributionUrl?.let { attributionUrl ->
-                Button(onClick = { launchExternalLink(context, attributionUrl) }) {
-                    Text("JustWatch")
-                }
-            }
         }
 
         LazyRow(
@@ -80,7 +75,7 @@ fun StreamingProviderButtons(
                 key = { it.id ?: it.name.orEmpty() },
             ) { provider ->
                 val name = provider.name ?: return@items
-                val directLinks = justWatchLinks?.forProvider(name)
+                val directLinks = streamingLinks?.forProvider(name)
                 val logoUrl = directLinks?.providerIconUrl ?: providerLogoUrl(provider.logoPath)
                 Button(
                     onClick = {

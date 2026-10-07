@@ -54,6 +54,10 @@ class DisplayPreferencesService
 
         companion object {
             const val DEFAULT_DISPLAY_PREF_ID = "default"
-            val DEFAULT_CLIENT = if (BuildConfig.DEBUG) "Wholphin (Debug)" else "Wholphin"
+            // Performance builds deliberately keep the existing .debug application ID so
+            // they must also keep the same Jellyfin display-preferences key. Otherwise an
+            // optimized update would look like it lost the user's Home/layout settings.
+            val DEFAULT_CLIENT =
+                if (BuildConfig.APPLICATION_ID.endsWith(".debug")) "Wholphin (Debug)" else "Wholphin"
         }
     }

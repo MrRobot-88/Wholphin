@@ -24,17 +24,6 @@ providers.gradleProperty("freshBuildDir").orNull?.let { freshBuildDir ->
     layout.buildDirectory.set(file(freshBuildDir))
 }
 
-val localBuildProperties =
-    Properties().apply {
-        val file = rootProject.file("local.properties")
-        if (file.exists()) file.inputStream().use(::load)
-    }
-val justWatchPartnerToken =
-    providers.environmentVariable("JUSTWATCH_PARTNER_TOKEN").orNull?.takeIf { it.isNotBlank() }
-        ?: localBuildProperties.getProperty("justwatch.partner.token", "")
-val escapedJustWatchPartnerToken =
-    justWatchPartnerToken.replace("\\", "\\\\").replace("\"", "\\\"")
-
 val isCI = providers.environmentVariable("CI").orElse("false").map { it.toBoolean() }
 val shouldSign =
     isCI.zip(
@@ -105,7 +94,6 @@ configure<ApplicationExtension> {
         testInstrumentationRunner = "com.github.damontecres.wholphin.test.WholphinTestRunner"
 
         buildConfigField("long", "BUILD_TIME", System.currentTimeMillis().toString())
-        buildConfigField("String", "JUSTWATCH_PARTNER_TOKEN", "\"$escapedJustWatchPartnerToken\"")
     }
 
     signingConfigs {
@@ -156,6 +144,16 @@ configure<ApplicationExtension> {
             isDebuggable = true
             applicationIdSuffix = ".debug"
         }
+
+        create("performance") {
+            // Release-like runtime for real TV testing while preserving the same
+            // package name and debug certificate as our existing test installs.
+            initWith(getByName("release"))
+            applicationIdSuffix = ".debug"
+            signingConfig = signingConfigs.getByName("debug")
+            isDebuggable = false
+            matchingFallbacks += listOf("release", "debug")
+        }
     }
     flavorDimensions += "version"
     productFlavors {
@@ -173,7 +171,9 @@ configure<ApplicationExtension> {
             dimension = "version"
             isDefault = true
             manifestPlaceholders += mapOf(featureLeanback to false)
-            setFeatureFlag(featureUpdate, true)
+            // Cosmofin is our fork; never auto-install upstream Wholphin releases.
+            // This also removes an unnecessary startup network check on low-end TV hardware.
+            setFeatureFlag(featureUpdate, false)
             setFeatureFlag(featureDiscover, true)
         }
         create("appstore") {
@@ -186,7 +186,8 @@ configure<ApplicationExtension> {
             dimension = "version"
             manifestPlaceholders += mapOf(featureLeanback to true)
             setFeatureFlag(featureUpdate, false)
-            setFeatureFlag(featureDiscover, false)
+            // Cosmofin's Discover + streaming-provider flow is required on Fire TV too.
+            setFeatureFlag(featureDiscover, true)
         }
     }
     compileOptions {
@@ -247,7 +248,7 @@ androidComponents {
                         .getFilter(FilterConfiguration.FilterType.ABI)
                         .let { if (it != null) "-${it.identifier}" else "" }
                 val outputFileName =
-                    "Wholphin-${variant.flavorName}-${variant.buildType}-${output.versionName.get()}-${output.versionCode.get()}$abi.apk"
+                    "Cosmofin-${variant.flavorName}-${variant.buildType}-${output.versionName.get()}-${output.versionCode.get()}$abi.apk"
                 output.outputFileName = outputFileName
             }
     }

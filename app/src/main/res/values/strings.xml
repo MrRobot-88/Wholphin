@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name" translatable="false">Wholphin</string>
-    <string name="app_name_long" translatable="false">Wholphin</string>
+    <string name="app_name" translatable="false">Cosmofin</string>
+    <string name="app_name_long" translatable="false">Cosmofin</string>
 
     <string name="about">About</string>
     <string name="active_recordings">Active Recordings</string>
@@ -587,8 +587,8 @@
     <string name="content_scale_fill">Fill</string>
     <string name="content_scale_fill_width">Fill width</string>
     <string name="content_scale_fill_height">Fill height</string>
-    <string name="display_preset_default">Wholphin Default</string>
-    <string name="display_preset_compact">Wholphin Compact</string>
+    <string name="display_preset_default">Cosmofin Default</string>
+    <string name="display_preset_compact">Cosmofin Compact</string>
     <string name="display_preset_series_thumb">Series Thumb images</string>
     <string name="display_preset_episode_thumbnails">Episode Thumbnail images</string>
 
@@ -808,7 +808,7 @@
     <string name="select_all">Select all</string>
     <string name="separate_types">Separate types</string>
     <string name="prefer_logos">Prefer showing logos for titles</string>
-    <string name="updated_toast">Wholphin updated to %s</string>
+    <string name="updated_toast">Cosmofin updated to %s</string>
     <string name="remove_continue_watching">Remove from continue watching</string>
     <string name="remove_next_up">Remove series from next up</string>
     <string name="view_removed_next_up">View series removed from next up</string>
@@ -856,7 +856,7 @@
     <string name="dovi_p7_native_summary">Leave Profile 7 untouched for devices with native P7 decoding</string>
     <string name="dovi_p7_convert_summary">Convert the Profile 7 RPU to Profile 8.1 and drop the enhancement layer</string>
     <string name="dovi_p7_strip_summary">Remove Dolby Vision metadata/enhancement data and play the HDR10-compatible HEVC base layer</string>
-    <string name="dovi_p7_off_summary">Disable Wholphin Profile 7 compatibility handling</string>
+    <string name="dovi_p7_off_summary">Disable Cosmofin Profile 7 compatibility handling</string>
     <array name="dovi_p7_modes">
         <item>@string/dovi_p7_auto</item>
         <item>@string/dovi_p7_native</item>

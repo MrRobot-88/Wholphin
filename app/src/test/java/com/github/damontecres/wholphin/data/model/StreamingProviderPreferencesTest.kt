@@ -26,8 +26,8 @@ class StreamingProviderPreferencesTest {
     }
 
     @Test
-    fun blankRegionUsesFallbackAndInvalidFallbackUsesUs() {
+    fun blankRegionUsesFallbackAndInvalidFallbackUsesSweden() {
         assertEquals("DK", JellyfinUserPreferences().resolvedStreamingRegion("dk"))
-        assertEquals("US", JellyfinUserPreferences().resolvedStreamingRegion(""))
+        assertEquals("SE", JellyfinUserPreferences().resolvedStreamingRegion(""))
     }
 }

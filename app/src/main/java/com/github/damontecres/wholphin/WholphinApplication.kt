@@ -35,7 +35,7 @@ class WholphinApplication :
                     override fun isLoggable(
                         tag: String?,
                         priority: Int,
-                    ): Boolean = priority >= Log.INFO
+                    ): Boolean = priority >= Log.WARN
 
                     override fun log(
                         priority: Int,
@@ -43,7 +43,7 @@ class WholphinApplication :
                         message: String,
                         t: Throwable?,
                     ) {
-                        Log.println(priority, tag ?: "Wholphin", message)
+                        Log.println(priority, tag ?: "Cosmofin", message)
                     }
                 },
             )
@@ -54,8 +54,10 @@ class WholphinApplication :
 
     override fun onCreate() {
         super.onCreate()
-        logNativeDecoderDiagnostics()
         if (BuildConfig.DEBUG) {
+            // Diagnostics intentionally stay out of production/performance builds:
+            // loading every optional native decoder at cold start is expensive on TV sticks.
+            logNativeDecoderDiagnostics()
             StrictMode.setThreadPolicy(
                 StrictMode.ThreadPolicy
                     .Builder()
@@ -96,9 +98,9 @@ class WholphinApplication :
                 )
             dialog {
                 text =
-                    "Wholphin has crashed! Would you like to attempt to " +
+                    "Cosmofin has crashed! Would you like to attempt to " +
                     "send a crash report to your Jellyfin server?"
-                title = "Wholphin Crash Report"
+                title = "Cosmofin Crash Report"
                 positiveButtonText = "Send"
                 negativeButtonText = "Do not send"
             }
@@ -109,7 +111,7 @@ class WholphinApplication :
     }
 
     private fun logNativeDecoderDiagnostics() {
-        val tag = "WholphinNative"
+        val tag = "CosmofinNative"
         try {
             val clazz = Class.forName("androidx.media3.decoder.ffmpeg.FfmpegLibrary")
             val available = clazz.getMethod("isAvailable").invoke(null) as Boolean
