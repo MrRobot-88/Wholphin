@@ -54,6 +54,7 @@ import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.onLayoutRectChanged
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -74,6 +75,7 @@ import com.github.damontecres.wholphin.ui.playback.isPlayKeyUp
 import com.github.damontecres.wholphin.ui.tryRequestFocus
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.devicePerformanceProfile
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
@@ -125,9 +127,22 @@ fun <T : CardGridItem> CardGrid(
 
     var focusedIndex by rememberSaveable { mutableIntStateOf(startPosition) }
     val currentFocusedIndex by rememberUpdatedState(focusedIndex)
+    val context = LocalContext.current
+    val lowMemoryDevice = remember(context) { context.devicePerformanceProfile().lowMemory }
+    val gridCacheWindow =
+        remember(lowMemoryDevice) {
+            if (lowMemoryDevice) {
+                // Keep roughly one viewport around the user on 1 GB / small-heap TVs.
+                LazyLayoutCacheWindow(aheadFraction = 0.75f, behindFraction = 0.25f)
+            } else {
+                // Still less aggressive than upstream's 2x-ahead cache while retaining
+                // enough prefetched cards for fast D-pad navigation.
+                LazyLayoutCacheWindow(aheadFraction = 1.5f, behindFraction = 0.5f)
+            }
+        }
     val gridState =
         rememberLazyGridState(
-            cacheWindow = LazyLayoutCacheWindow(aheadFraction = 2f, behindFraction = 0.5f),
+            cacheWindow = gridCacheWindow,
             initialFirstVisibleItemIndex = focusedIndex,
         )
     val scope = rememberCoroutineScope()

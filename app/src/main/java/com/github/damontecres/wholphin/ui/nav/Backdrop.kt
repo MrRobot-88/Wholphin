@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -32,10 +33,13 @@ import coil3.annotation.ExperimentalCoilApi
 import coil3.compose.AsyncImage
 import coil3.compose.useExistingImageAsPlaceholder
 import coil3.request.ImageRequest
+import coil3.request.maxBitmapSize
 import coil3.request.transitionFactory
+import coil3.size.Size
 import com.github.damontecres.wholphin.preferences.BackdropStyle
 import com.github.damontecres.wholphin.services.BackdropResult
 import com.github.damontecres.wholphin.ui.CrossFadeFactory
+import com.github.damontecres.wholphin.util.devicePerformanceProfile
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -77,6 +81,8 @@ fun Backdrop(
     useExistingImageAsPlaceholder: Boolean = false,
     crossfadeDuration: Duration = 200.milliseconds,
 ) {
+    val context = LocalContext.current
+    val lowMemoryDevice = remember(context) { context.devicePerformanceProfile().lowMemory }
     val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val baseBackgroundColor = MaterialTheme.colorScheme.background
     if (backdrop.hasColors &&
@@ -155,8 +161,15 @@ fun Backdrop(
             AsyncImage(
                 model =
                     ImageRequest
-                        .Builder(LocalContext.current)
+                        .Builder(context)
                         .data(backdrop.imageUrl)
+                        .apply {
+                            if (lowMemoryDevice) {
+                                // Decorative backdrop: cap texture size on constrained TVs.
+                                // Posters and playback video remain completely unaffected.
+                                maxBitmapSize(Size(1280, 720))
+                            }
+                        }
                         .useExistingImageAsPlaceholder(useExistingImageAsPlaceholder)
                         .transitionFactory(CrossFadeFactory(crossfadeDuration))
                         .build(),

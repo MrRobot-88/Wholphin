@@ -128,7 +128,9 @@ class SuggestionService
 
             workManager.enqueueUniqueWork(
                 workName,
-                ExistingWorkPolicy.REPLACE,
+                // Re-collecting the same Home row must not cancel and restart an
+                // already-running network refresh on a small TV box.
+                ExistingWorkPolicy.KEEP,
                 request,
             )
             Timber.d(

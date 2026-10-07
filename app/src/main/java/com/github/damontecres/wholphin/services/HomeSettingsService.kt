@@ -40,6 +40,7 @@ import com.github.damontecres.wholphin.util.GetRecordingsRequestHandler
 import com.github.damontecres.wholphin.util.GetStudiosRequestHandler
 import com.github.damontecres.wholphin.util.HomeRowLoadingState
 import com.github.damontecres.wholphin.util.HomeRowLoadingState.Success
+import dagger.Lazy
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -96,7 +97,7 @@ class HomeSettingsService
         private val navDrawerService: NavDrawerService,
         private val latestNextUpService: LatestNextUpService,
         private val imageUrlService: ImageUrlService,
-        private val suggestionService: SuggestionService,
+        private val suggestionService: Lazy<SuggestionService>,
         private val displayPreferencesService: DisplayPreferencesService,
     ) {
         @OptIn(ExperimentalSerializationApi::class)
@@ -1171,6 +1172,7 @@ class HomeSettingsService
                     if (itemKind != null) {
                         val suggestions =
                             suggestionService
+                                .get()
                                 .getSuggestionsFlow(row.parentId, itemKind)
                                 .firstOrNull()
                         when (suggestions) {

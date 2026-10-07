@@ -129,7 +129,7 @@ class SuggestionServiceTest {
                 verify {
                     mockWorkManager.enqueueUniqueWork(
                         workName,
-                        ExistingWorkPolicy.REPLACE,
+                        ExistingWorkPolicy.KEEP,
                         any<OneTimeWorkRequest>(),
                     )
                 }
@@ -178,7 +178,7 @@ class SuggestionServiceTest {
             verify {
                 mockWorkManager.enqueueUniqueWork(
                     workName,
-                    ExistingWorkPolicy.REPLACE,
+                    ExistingWorkPolicy.KEEP,
                     any<OneTimeWorkRequest>(),
                 )
             }

@@ -21,6 +21,7 @@ import com.github.damontecres.wholphin.data.SeerrServerDao
 import com.github.damontecres.wholphin.data.ServerPreferencesDao
 import com.github.damontecres.wholphin.preferences.AppPreferences
 import com.github.damontecres.wholphin.preferences.AppPreferencesSerializer
+import com.github.damontecres.wholphin.util.devicePerformanceProfile
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -35,17 +36,23 @@ object DatabaseModule {
     @Singleton
     fun database(
         @ApplicationContext context: Context,
-    ): AppDatabase =
-        Room
-            .databaseBuilder(
-                context,
-                AppDatabase::class.java,
-                "wholphin",
-            ).addMigrations(Migrations.Migrate2to3)
-//            .setQueryCallback({ sqlQuery, args ->
-//                Timber.v("sqlQuery=$sqlQuery, args=$args")
-//            }, WholphinDispatchers.IO.asExecutor())
-            .build()
+    ): AppDatabase {
+        val builder =
+            Room
+                .databaseBuilder(
+                    context,
+                    AppDatabase::class.java,
+                    "wholphin",
+                ).addMigrations(Migrations.Migrate2to3)
+
+        if (context.devicePerformanceProfile().lowMemory) {
+            // This local database is small and write contention is low. On constrained TV
+            // hardware prefer a lower-overhead journal instead of keeping WAL resources alive.
+            builder.setJournalMode(androidx.room.RoomDatabase.JournalMode.TRUNCATE)
+        }
+
+        return builder.build()
+    }
 
     @Provides
     @Singleton

@@ -42,7 +42,9 @@ class SuggestionsSchedulerService
                     "SuggestionsSchedulerService requires an AppCompatActivity context, but received: ${context::class.java.name}",
                 )
 
-        internal var initialDelaySecondsProvider: () -> Long = { 60L + Random.nextLong(0L, 121L) }
+        // Keep the periodic refresh out of the first minutes after app launch. Home rows
+        // still trigger an immediate one-time refresh when their cache is actually empty.
+        internal var initialDelaySecondsProvider: () -> Long = { 600L + Random.nextLong(0L, 301L) }
 
         init {
             activity.lifecycleScope.launch(dispatcher + ExceptionHandler()) {
@@ -108,7 +110,7 @@ class SuggestionsSchedulerService
                     ).setInputData(inputData)
                     .addTag("user:$userId")
 
-            val initialDelaySeconds = initialDelaySecondsProvider().coerceIn(60L, 180L)
+            val initialDelaySeconds = initialDelaySecondsProvider().coerceIn(60L, 900L)
             periodicWorkRequestBuilder.setInitialDelay(initialDelaySeconds.seconds.toJavaDuration())
 
             Timber.i("Scheduling periodic SuggestionsWorker with ${initialDelaySeconds}s delay")

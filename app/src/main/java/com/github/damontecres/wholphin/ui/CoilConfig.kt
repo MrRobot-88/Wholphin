@@ -3,6 +3,8 @@ package com.github.damontecres.wholphin.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import coil3.ImageLoader
+import coil3.bitmapFactoryMaxParallelism
+import coil3.memoryCacheMaxSizePercentWhileInBackground
 import coil3.annotation.ExperimentalCoilApi
 import coil3.compose.setSingletonImageLoaderFactory
 import coil3.disk.DiskCache
@@ -19,6 +21,7 @@ import coil3.request.crossfade
 import coil3.util.DebugLogger
 import com.github.damontecres.wholphin.preferences.AppPreference
 import com.github.damontecres.wholphin.preferences.AppPreferences
+import com.github.damontecres.wholphin.util.devicePerformanceProfile
 import okhttp3.OkHttpClient
 import timber.log.Timber
 import kotlin.time.ExperimentalTime
@@ -72,12 +75,32 @@ fun CoilConfig(
             }
         }
     setSingletonImageLoaderFactory { ctx ->
-        Timber.i("Image diskCacheSizeBytes=$diskCacheSizeBytes")
+        val profile = ctx.devicePerformanceProfile()
+        val memoryCachePercent = if (profile.lowMemory) 0.10 else 0.20
+        val decodeParallelism = if (profile.lowMemory) 2 else 4
+        Timber.i(
+            "Image cache: disk=%d heap=%dMB lowMemory=%s ramCache=%.0f%% decoders=%d",
+            diskCacheSizeBytes,
+            profile.memoryClassMb,
+            profile.lowMemory,
+            memoryCachePercent * 100,
+            decodeParallelism,
+        )
         ImageLoader
             .Builder(ctx)
             .apply {
+                bitmapFactoryMaxParallelism(decodeParallelism)
                 if (enableCache) {
-                    memoryCache(MemoryCache.Builder().maxSizePercent(ctx).build())
+                    memoryCache(
+                        MemoryCache
+                            .Builder()
+                            .maxSizePercent(ctx, memoryCachePercent)
+                            .weakReferencesEnabled(!profile.lowMemory)
+                            .build(),
+                    )
+                    // Give Netflix/Prime/etc. the RAM back while Cosmofin is backgrounded.
+                    // The 200 MB disk cache makes returning to Cosmofin cheap.
+                    memoryCacheMaxSizePercentWhileInBackground(0.25)
                     diskCache(
                         DiskCache
                             .Builder()

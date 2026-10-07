@@ -23,6 +23,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.datastore.core.DataStore
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewModelScope
@@ -68,7 +69,9 @@ import com.github.damontecres.wholphin.ui.util.ProvideLocalClock
 import com.github.damontecres.wholphin.util.DebugLogTree
 import com.github.damontecres.wholphin.util.ExceptionHandler
 import com.github.damontecres.wholphin.util.WholphinDispatchers
+import com.github.damontecres.wholphin.util.devicePerformanceProfile
 import com.github.damontecres.wholphin.util.requestSerializersModule
+import dagger.Lazy
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -126,13 +129,13 @@ class MainActivity : AppCompatActivity() {
     lateinit var userSwitchListener: UserSwitchListener
 
     @Inject
-    lateinit var tvProviderSchedulerService: TvProviderSchedulerService
+    lateinit var tvProviderSchedulerService: Lazy<TvProviderSchedulerService>
 
     @Inject
-    lateinit var suggestionsSchedulerService: SuggestionsSchedulerService
+    lateinit var suggestionsSchedulerService: Lazy<SuggestionsSchedulerService>
 
     @Inject
-    lateinit var latestNextUpSchedulerService: LatestNextUpSchedulerService
+    lateinit var latestNextUpSchedulerService: Lazy<LatestNextUpSchedulerService>
 
     @Inject
     lateinit var backdropService: BackdropService
@@ -153,6 +156,7 @@ class MainActivity : AppCompatActivity() {
 
     private var signInAuto = true
     private var playerBackend: PlayerBackend? = null
+    private var backgroundSchedulersStarted = false
 
     private val json =
         Json {
@@ -321,11 +325,32 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun startBackgroundSchedulersWhenSettled() {
+        if (backgroundSchedulersStarted) return
+        lifecycleScope.launch {
+            val delayMs = if (devicePerformanceProfile().lowMemory) 15_000L else 5_000L
+            delay(delayMs)
+            if (backgroundSchedulersStarted || !lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+                return@launch
+            }
+            // These services exist to schedule maintenance work. Defer their construction
+            // until after the first interactive frames so WorkManager/SQLite don't compete
+            // with cold start and Home rendering on small TV devices.
+            suggestionsSchedulerService.get()
+            latestNextUpSchedulerService.get()
+            tvProviderSchedulerService.get()
+            backgroundSchedulersStarted = true
+            Timber.d("Background schedulers started after %dms", delayMs)
+        }
+    }
+
     override fun onStop() {
         super.onStop()
         Timber.d("onStop")
         screensaverService.stop(true)
-        tvProviderSchedulerService.launchOneTimeRefresh()
+        if (backgroundSchedulersStarted) {
+            tvProviderSchedulerService.get().launchOneTimeRefresh()
+        }
     }
 
     override fun onPause() {
@@ -336,19 +361,22 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         Timber.d("onStart")
+        startBackgroundSchedulersWhenSettled()
 
-        lifecycleScope.launchDefault {
-            val appPreferences = userPreferencesDataStore.data.first()
-            if (UpdateChecker.ACTIVE && appPreferences.autoCheckForUpdates) {
-                try {
-                    updateChecker.maybeShowUpdateToast(
-                        appPreferences.updateUrl,
-                    )
-                } catch (ex: Exception) {
-                    Timber.w(
-                        ex,
-                        "Exception during update check",
-                    )
+        if (UpdateChecker.ACTIVE) {
+            lifecycleScope.launchDefault {
+                val appPreferences = userPreferencesDataStore.data.first()
+                if (appPreferences.autoCheckForUpdates) {
+                    try {
+                        updateChecker.maybeShowUpdateToast(
+                            appPreferences.updateUrl,
+                        )
+                    } catch (ex: Exception) {
+                        Timber.w(
+                            ex,
+                            "Exception during update check",
+                        )
+                    }
                 }
             }
         }

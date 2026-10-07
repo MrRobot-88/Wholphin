@@ -60,6 +60,11 @@ val gitDescribe =
         .standardOutput.asText
         .getOrElse("v0.0.0")
 
+// Cosmofin release versioning is intentionally independent of upstream Wholphin tags.
+// Bump both values for every tested APK set so old working versions are never overwritten.
+val cosmofinVersion = "1.1"
+val cosmofinVersionCode = 101
+
 kotlin {
     compilerOptions {
         languageVersion = org.jetbrains.kotlin.gradle.dsl.KotlinVersion.KOTLIN_2_3
@@ -89,8 +94,8 @@ configure<ApplicationExtension> {
         applicationId = "com.github.damontecres.wholphin"
         minSdk = libs.versions.minSdk.getInt()
         targetSdk = libs.versions.targetSdk.getInt()
-        versionCode = gitTags.trim().lines().size
-        versionName = gitDescribe.trim().removePrefix("v").ifBlank { "0.0.0" }
+        versionCode = cosmofinVersionCode
+        versionName = cosmofinVersion
         testInstrumentationRunner = "com.github.damontecres.wholphin.test.WholphinTestRunner"
 
         buildConfigField("long", "BUILD_TIME", System.currentTimeMillis().toString())
