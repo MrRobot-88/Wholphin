@@ -36,7 +36,6 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -256,13 +255,37 @@ class HomeViewModel
                         )
                     }
                 } else {
-                    val rows = deferred.awaitAll()
-                    Timber.v("Got all rows")
+                    // First load: reveal each row as soon as it is ready instead of
+                    // blocking the whole Home page on the slowest row.
+                    val remaining = deferred.withIndex().toMutableList()
+                    var firstRowPublished = false
+                    while (remaining.isNotEmpty()) {
+                        val (rowIndex, rowData) =
+                            select {
+                                remaining.forEach { (rowIndex, deferred) ->
+                                    deferred.onAwait { rowIndex to it }
+                                }
+                            }
+                        remaining.removeIf { it.index == rowIndex }
+                        _state.update { current ->
+                            val newRows =
+                                current.homeRows.toMutableList().apply {
+                                    set(rowIndex, rowData)
+                                }
+                            current.copy(
+                                loadingState = LoadingState.Success,
+                                homeRows = newRows,
+                            )
+                        }
+                        if (!firstRowPublished) {
+                            Timber.v("Published first Home row index=%s", rowIndex)
+                            firstRowPublished = true
+                        }
+                    }
                     _state.update {
                         it.copy(
                             loadingState = LoadingState.Success,
                             refreshState = LoadingState.Success,
-                            homeRows = rows,
                         )
                     }
                 }

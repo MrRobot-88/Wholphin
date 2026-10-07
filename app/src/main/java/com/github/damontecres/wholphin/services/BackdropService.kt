@@ -14,6 +14,7 @@ import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import coil3.request.bitmapConfig
+import coil3.size.Size
 import com.github.damontecres.wholphin.data.model.BaseItem
 import com.github.damontecres.wholphin.data.model.DiscoverItem
 import com.github.damontecres.wholphin.preferences.AppPreferences
@@ -47,6 +48,7 @@ class BackdropService
         private val preferences: DataStore<AppPreferences>,
     ) {
         private val extractedColorCache = LruCache<String, ExtractedColors>(50)
+        private val paletteSampleSize = Size(128, 72)
 
         private val _backdropFlow = MutableStateFlow<BackdropResult>(BackdropResult.NONE)
         val backdropFlow = _backdropFlow
@@ -101,7 +103,10 @@ class BackdropService
             itemId: String,
             imageUrl: String?,
         ) {
-            delay(500)
+            // Debounce rapid D-pad focus changes. Bail out before image decoding if
+            // this item is no longer the active backdrop request.
+            delay(300)
+            if (_backdropFlow.value.itemId != itemId) return
             val backdropStyle =
                 preferences.data
                     .firstOrNull()
@@ -146,6 +151,9 @@ class BackdropService
                         ImageRequest
                             .Builder(context)
                             .data(imageUrl)
+                            // Palette only needs a tiny representative sample. Avoid
+                            // decoding a full 1080p/4K backdrop into software memory.
+                            .size(paletteSampleSize)
                             .allowHardware(false)
                             .bitmapConfig(Bitmap.Config.ARGB_8888)
                             .build()
